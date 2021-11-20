@@ -1,4 +1,8 @@
 *
 !*.py
+!data/
+!model/
+!training/
+!results/
 !.gitignore
 !*.ipynb
