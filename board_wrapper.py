@@ -16,6 +16,8 @@ from IPython.display import clear_output
 import torch
 import torchvision as tv
 from argparse import Namespace
+from model.model_base import ModelBase
+from model.model_getter import get_model
 
 
 # Read in the hyper-parameters and return a Run namedtuple containing all the
@@ -167,17 +169,22 @@ class RunManager():
       json.dump(self.run_data, f, ensure_ascii=False, indent=4)
 
 
-def train_w_RunManager(network, train_data, test_data, criterion, args: Namespace,  params=cm.params, epochs=5):
+def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,  params=cm.params, epochs=5):
     # put all hyper params into a OrderedDict, easily expandable
 
     m = RunManager(image=False)
     # get all runs from params using RunBuilder class
     for run in RunBuilder.get_runs(params):
-
         # if params changes, following line of code should reflect the changes too
+        network: ModelBase = get_model(run.model_type, data.vocabulary_size, run.dropout,
+                                       args.num_of_layers, args.hidden_layer_units,
+                                       args.weights_uniforming, args.batch_size)
+
         loader = torch.utils.data.DataLoader(train_data, batch_size = 1, shuffle=run.shuffle)
         testloader = torch.utils.data.DataLoader(test_data, batch_size = 1, shuffle=run.shuffle)
         optimizer = torch.optim.Adam(network.parameters(), lr=run.lr)
+
+
 
         states = network.state_init()
         m.begin_run(run, network, loader, testloader)
@@ -188,9 +195,13 @@ def train_w_RunManager(network, train_data, test_data, criterion, args: Namespac
           network.state_init()
           device: str or int = next(network.parameters()).device
           # Run a batch in train mode
+          cnt = 0
           for batch in loader:
             if len(batch[0].shape) > 3:
               stop =1
+            if cnt % 50 == 0:
+              print(f"Batch No.{cnt}/{len(loader)}")
+            cnt += 1
             x = batch[0].squeeze()
             y = batch[1].squeeze()
 
@@ -231,7 +242,7 @@ def train_w_RunManager(network, train_data, test_data, criterion, args: Namespac
 
           m.end_epoch()
         m.end_run()
-        torch.save(network, f'saved_models/{network.name}-{run}.model')
+        torch.save(network, f'-{run}.model')
 
 
     # when all runs are done, save results to files

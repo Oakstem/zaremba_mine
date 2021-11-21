@@ -6,8 +6,9 @@ from model.model_base import ModelBase
 
 class ModelLSTM(ModelBase):
     def __init__(self, vocab_size: int, num_of_layers: int, hidden_layer_units: int,
-                 dropout: float, weights_uniforming: float):
-        super(ModelLSTM, self).__init__(vocab_size, num_of_layers, hidden_layer_units, dropout, weights_uniforming)
+                 dropout: float, weights_uniforming: float, batch_sz: int):
+        super(ModelLSTM, self).__init__(vocab_size, num_of_layers, hidden_layer_units,
+                                        dropout, weights_uniforming, batch_sz)
 
     def get_rnn_type(self) -> type:
         return nn.LSTM

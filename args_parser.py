@@ -1,7 +1,9 @@
 import argparse
-
+import collections
 import torch
 
+def auto_namedtuple(arg='auto_namedtuple', **kwargs):
+    return collections.namedtuple(arg, tuple(kwargs))(**kwargs)
 
 def parse_args():
     # Command line arguments parser. Described as in their 'help' sections.
@@ -21,12 +23,17 @@ def parse_args():
     args = parser.parse_args()
 
     set_device(args)
+    nt = auto_namedtuple(**vars(args))
+    nt2 = collections.namedtuple('temp', "num_of_layers, hidden_layer_units, dropout weights_uniforming, batch_size,"
+                                   "sequence_length, learning_rate, total_epochs_num, first_epoch_modify_lr,"
+                                   " lr_decrease_factor, max_gradients_norm")
+    ntt = nt2(2,200,0.5,0.05,20,35,1,39,6,1.2,5)
 
     print('Parameters of the model:')
     print('Args:', args)
     print("\n")
 
-    return args
+    return nt
 
 
 def set_device(args):

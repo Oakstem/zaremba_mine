@@ -9,23 +9,31 @@ from model.type import ModelType
 from training.train import train
 from training.nll_loss import nll_loss
 # from torch.nn import NLLLoss
-import common as cm
+# import common as cm
 from board_wrapper import train_w_RunManager
+from collections  import OrderedDict
 
 
 
 
 def main():
+    params = OrderedDict(
+        lr=[.001],
+        batch_size=[20],
+        shuffle=[False],
+        dropout=[0, 0.5],
+        model_type=['ModelType.GRU', 'ModelType.LSTM']
+    )
     args: Namespace = parse_args()
 
     data: Data = DataGetter.get_data(args.batch_size, args.sequence_length)
     traindata = PennDataset(data.train_dataset)
     testdata = PennDataset(data.test_dataset)
-    model_gru_no_dropout: ModelBase = get_model(ModelType.GRU, data.vocabulary_size, 0,
-                                                args.num_of_layers, args.hidden_layer_units,
-                                                args.weights_uniforming, args.batch_size)
+    # model_gru_no_dropout: ModelBase = get_model(ModelType.GRU, data.vocabulary_size, 0,
+    #                                             args.num_of_layers, args.hidden_layer_units,
+    #                                             args.weights_uniforming, args.batch_size)
     # train_model("GRU No Dropout", model_gru_no_dropout, data, args)
-    train_w_RunManager(model_gru_no_dropout, traindata, testdata, nll_loss, args, epochs=2)
+    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=10)
     # model_gru_dropout: ModelBase = get_model(ModelType.GRU, data.vocabulary_size, args.dropout,
     #                                          args.num_of_layers, args.hidden_layer_units,
     #                                          args.weights_uniforming)
