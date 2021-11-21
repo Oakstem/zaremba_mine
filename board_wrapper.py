@@ -133,9 +133,10 @@ class RunManager():
     self.run_data.append(results)
     df = pd.DataFrame.from_dict(self.run_data, orient = 'columns')
 
-    # display epoch information and show progress
-    clear_output(wait=True)
-    # display(df)
+    if cm.IN_COLAB:
+      # display epoch information and show progress
+      clear_output(wait=True)
+      display(df)
 
   # accumulate loss of batch into entire epoch loss
   def track_loss(self, loss, train):
@@ -169,7 +170,8 @@ class RunManager():
       json.dump(self.run_data, f, ensure_ascii=False, indent=4)
 
 
-def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,  params=cm.params, epochs=5):
+def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
+                       params=cm.params, epochs=5):
     # put all hyper params into a OrderedDict, easily expandable
 
     m = RunManager(image=False)
@@ -197,9 +199,7 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace, 
           # Run a batch in train mode
           cnt = 0
           for batch in loader:
-            if len(batch[0].shape) > 3:
-              stop =1
-            if cnt % 50 == 0:
+            if cm.IN_COLAB and cnt % 50 == 0:
               print(f"Batch No.{cnt}/{len(loader)}")
             cnt += 1
             x = batch[0].squeeze()
@@ -241,8 +241,10 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace, 
             m.track_num_correct(preds, y, train=0)
 
           m.end_epoch()
+          if epoch%2 == 0:
+            torch.save(network, f'results/{run}.model')
         m.end_run()
-        torch.save(network, f'-{run}.model')
+        torch.save(network, f'results/{run}.model')
 
 
     # when all runs are done, save results to files

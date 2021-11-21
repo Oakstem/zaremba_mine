@@ -12,19 +12,32 @@ from training.nll_loss import nll_loss
 # import common as cm
 from board_wrapper import train_w_RunManager
 from collections  import OrderedDict
+from collections  import namedtuple
 
+try:
+  import google.colab
+  IN_COLAB = True
+except:
+  IN_COLAB = False
 
 
 
 def main():
     params = OrderedDict(
+        model_type=['ModelType.GRU', 'ModelType.LSTM'],
         lr=[.001],
         batch_size=[20],
         shuffle=[False],
         dropout=[0, 0.5],
-        model_type=['ModelType.GRU', 'ModelType.LSTM']
     )
-    args: Namespace = parse_args()
+
+    if IN_COLAB:
+        nt2 = namedtuple('temp', "num_of_layers, hidden_layer_units, dropout weights_uniforming, batch_size,"
+                                 "sequence_length, learning_rate, total_epochs_num, first_epoch_modify_lr,"
+                                 " lr_decrease_factor, max_gradients_norm")
+        args = nt2(2, 200, 0.5, 0.05, 20, 35, 1, 39, 6, 1.2, 5)
+    else:
+        args: Namespace = parse_args()
 
     data: Data = DataGetter.get_data(args.batch_size, args.sequence_length)
     traindata = PennDataset(data.train_dataset)
@@ -33,7 +46,7 @@ def main():
     #                                             args.num_of_layers, args.hidden_layer_units,
     #                                             args.weights_uniforming, args.batch_size)
     # train_model("GRU No Dropout", model_gru_no_dropout, data, args)
-    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=10)
+    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=10, IN_COLAB)
     # model_gru_dropout: ModelBase = get_model(ModelType.GRU, data.vocabulary_size, args.dropout,
     #                                          args.num_of_layers, args.hidden_layer_units,
     #                                          args.weights_uniforming)
