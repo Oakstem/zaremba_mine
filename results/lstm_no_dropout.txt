@@ -1,0 +1,72 @@
+Model: LSTM No Dropout
+ModelLSTM(
+  (embedding): Embedding(10000, 200)
+  (rnns): ModuleList(
+    (0): LSTM(200, 200)
+    (1): LSTM(200, 200)
+  )
+  (fc): Linear(in_features=200, out_features=10000, bias=True)
+  (dropout): Dropout(p=0, inplace=False)
+)
+Epoch no = 1 / 39, lr = 1.000, Norm = 4.011, Train loss = 5.709, Train perplexity : 225.930, Test perplexity : 235.144
+Epoch no = 2 / 39, lr = 1.000, Norm = 4.137, Train loss = 5.271, Train perplexity : 143.698, Test perplexity : 166.476
+Epoch no = 3 / 39, lr = 1.000, Norm = 4.535, Train loss = 5.051, Train perplexity : 113.560, Test perplexity : 145.567
+Epoch no = 4 / 39, lr = 1.000, Norm = 4.663, Train loss = 4.891, Train perplexity : 96.577, Test perplexity : 135.682
+Epoch no = 5 / 39, lr = 1.000, Norm = 4.898, Train loss = 4.757, Train perplexity : 86.153, Test perplexity : 131.791
+Epoch no = 6 / 39, lr = 1.000, Norm = 5.170, Train loss = 4.647, Train perplexity : 78.373, Test perplexity : 130.472
+Epoch no = 7 / 39, lr = 0.833, Norm = 5.606, Train loss = 4.556, Train perplexity : 67.894, Test perplexity : 125.647
+Epoch no = 8 / 39, lr = 0.694, Norm = 6.028, Train loss = 4.382, Train perplexity : 60.512, Test perplexity : 124.465
+Epoch no = 9 / 39, lr = 0.579, Norm = 6.080, Train loss = 4.233, Train perplexity : 54.894, Test perplexity : 125.257
+Epoch no = 10 / 39, lr = 0.482, Norm = 6.680, Train loss = 4.127, Train perplexity : 50.370, Test perplexity : 127.191
+Epoch no = 11 / 39, lr = 0.402, Norm = 6.783, Train loss = 4.022, Train perplexity : 46.907, Test perplexity : 129.272
+Epoch no = 12 / 39, lr = 0.335, Norm = 7.291, Train loss = 3.944, Train perplexity : 44.179, Test perplexity : 132.347
+Epoch no = 13 / 39, lr = 0.279, Norm = 7.330, Train loss = 3.868, Train perplexity : 41.913, Test perplexity : 135.808
+Epoch no = 14 / 39, lr = 0.233, Norm = 7.675, Train loss = 3.822, Train perplexity : 40.144, Test perplexity : 138.903
+Epoch no = 15 / 39, lr = 0.194, Norm = 7.958, Train loss = 3.763, Train perplexity : 38.565, Test perplexity : 141.751
+Epoch no = 16 / 39, lr = 0.162, Norm = 7.871, Train loss = 3.723, Train perplexity : 37.211, Test perplexity : 144.370
+Epoch no = 17 / 39, lr = 0.135, Norm = 8.508, Train loss = 3.685, Train perplexity : 36.010, Test perplexity : 146.468
+Epoch no = 18 / 39, lr = 0.112, Norm = 8.241, Train loss = 3.659, Train perplexity : 34.962, Test perplexity : 148.314
+Epoch no = 19 / 39, lr = 0.093, Norm = 8.461, Train loss = 3.637, Train perplexity : 34.073, Test perplexity : 150.164
+Epoch no = 20 / 39, lr = 0.078, Norm = 8.690, Train loss = 3.618, Train perplexity : 33.222, Test perplexity : 151.685
+Epoch no = 21 / 39, lr = 0.065, Norm = 8.908, Train loss = 3.600, Train perplexity : 32.465, Test perplexity : 152.934
+Epoch no = 22 / 39, lr = 0.054, Norm = 8.815, Train loss = 3.589, Train perplexity : 31.779, Test perplexity : 153.960
+Epoch no = 23 / 39, lr = 0.045, Norm = 8.794, Train loss = 3.578, Train perplexity : 31.132, Test perplexity : 154.803
+Epoch no = 24 / 39, lr = 0.038, Norm = 8.898, Train loss = 3.570, Train perplexity : 30.515, Test perplexity : 155.389
+Epoch no = 25 / 39, lr = 0.031, Norm = 9.024, Train loss = 3.563, Train perplexity : 29.950, Test perplexity : 155.798
+Epoch no = 26 / 39, lr = 0.026, Norm = 9.309, Train loss = 3.555, Train perplexity : 29.424, Test perplexity : 156.029
+Epoch no = 27 / 39, lr = 0.022, Norm = 9.168, Train loss = 3.550, Train perplexity : 28.951, Test perplexity : 156.140
+Epoch no = 28 / 39, lr = 0.018, Norm = 9.326, Train loss = 3.544, Train perplexity : 28.533, Test perplexity : 156.157
+Epoch no = 29 / 39, lr = 0.015, Norm = 9.253, Train loss = 3.541, Train perplexity : 28.165, Test perplexity : 156.132
+Epoch no = 30 / 39, lr = 0.013, Norm = 9.302, Train loss = 3.538, Train perplexity : 27.850, Test perplexity : 156.082
+Epoch no = 31 / 39, lr = 0.010, Norm = 9.294, Train loss = 3.535, Train perplexity : 27.586, Test perplexity : 156.036
+Epoch no = 32 / 39, lr = 0.009, Norm = 9.288, Train loss = 3.531, Train perplexity : 27.366, Test perplexity : 155.986
+Epoch no = 33 / 39, lr = 0.007, Norm = 9.268, Train loss = 3.528, Train perplexity : 27.185, Test perplexity : 155.927
+Epoch no = 34 / 39, lr = 0.006, Norm = 9.232, Train loss = 3.525, Train perplexity : 27.038, Test perplexity : 155.872
+Epoch no = 35 / 39, lr = 0.005, Norm = 9.196, Train loss = 3.523, Train perplexity : 26.919, Test perplexity : 155.824
+Epoch no = 36 / 39, lr = 0.004, Norm = 9.178, Train loss = 3.521, Train perplexity : 26.821, Test perplexity : 155.779
+Epoch no = 37 / 39, lr = 0.004, Norm = 9.162, Train loss = 3.519, Train perplexity : 26.744, Test perplexity : 155.745
+Epoch no = 38 / 39, lr = 0.003, Norm = 9.150, Train loss = 3.517, Train perplexity : 26.681, Test perplexity : 155.713
+Epoch no = 39 / 39, lr = 0.002, Norm = 9.140, Train loss = 3.516, Train perplexity : 26.630, Test perplexity : 155.690
+
+Train Summary:
+Train Perplexities :[   225.9299240012818, 143.69819852001106, 113.56032161289366, 96.57660145446329,
+                        86.15327758136354, 78.37266114938097, 67.89379953582886, 60.51189801117288,
+                        54.893940832520684, 50.370393912333576, 46.90653866090155, 44.178957065045616,
+                        41.91314090880482, 40.14355266491508, 38.5647970411139, 37.21130853328139,
+                        36.01042146230909, 34.96164606429228, 34.07262676653698, 33.2224899000194,
+                        32.465230963208036, 31.779049910000783, 31.132127042157165, 30.51469930421562,
+                        29.949563829455435, 29.42435162626469, 28.951260981732364, 28.533488821246863,
+                        28.16479041661031, 27.849557064121672, 27.5860398191455, 27.365771844001458,
+                        27.185423603558483, 27.037650845474996, 26.91853504312995, 26.821433604823415,
+                        26.743645959111717, 26.680517246371704, 26.630057561941474 ]
+
+Test Perplexities :[    235.14419670420375, 166.47562486089598, 145.5674757466035, 135.68162998153127,
+                        131.79064154889397, 130.47184955992066, 125.64674517531319, 124.46459752314249,
+                        125.25734606945566, 127.19066499029555, 129.27178169803634, 132.34661317687244,
+                        135.80796961277775, 138.90331432856357, 141.7514048189796, 144.37021385383295,
+                        146.46759159115692, 148.3140184959767, 150.16353130387805, 151.68483098084863,
+                        152.9342406184585, 153.95992488937696, 154.8025250116241, 155.38868403031196,
+                        155.79833693928998, 156.0286529390959, 156.14024844986048, 156.1574834071494,
+                        156.13197707908014, 156.08220284225706, 156.0359283094668, 155.9856094882565,
+                        155.9274139450413, 155.87165459033477, 155.82428716219815, 155.77920800889996,
+                        155.7445695947816, 155.71273013556058, 155.6902208022343 ]

@@ -1,3 +1,10 @@
 *
 !*.py
+!data/
+!data/text/
+!model/
+!training/
+!results/
 !.gitignore
+!*.ipynb
+!*.txt
