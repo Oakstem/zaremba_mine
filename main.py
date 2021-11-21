@@ -13,6 +13,7 @@ from training.nll_loss import nll_loss
 from board_wrapper import train_w_RunManager
 from collections  import OrderedDict
 from collections  import namedtuple
+import common as cm
 
 try:
   import google.colab
@@ -31,7 +32,7 @@ def main():
         dropout=[0, 0.5],
     )
 
-    if IN_COLAB:
+    if cm.IN_COLAB:
         nt2 = namedtuple('temp', "num_of_layers, hidden_layer_units, dropout weights_uniforming, batch_size,"
                                  "sequence_length, learning_rate, total_epochs_num, first_epoch_modify_lr,"
                                  " lr_decrease_factor, max_gradients_norm")
@@ -46,7 +47,7 @@ def main():
     #                                             args.num_of_layers, args.hidden_layer_units,
     #                                             args.weights_uniforming, args.batch_size)
     # train_model("GRU No Dropout", model_gru_no_dropout, data, args)
-    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=10, IN_COLAB)
+    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=10)
     # model_gru_dropout: ModelBase = get_model(ModelType.GRU, data.vocabulary_size, args.dropout,
     #                                          args.num_of_layers, args.hidden_layer_units,
     #                                          args.weights_uniforming)

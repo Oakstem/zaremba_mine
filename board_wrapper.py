@@ -199,7 +199,7 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
           # Run a batch in train mode
           cnt = 0
           for batch in loader:
-            if cm.IN_COLAB and cnt % 50 == 0:
+            if not cm.IN_COLAB and cnt % 50 == 0:
               print(f"Batch No.{cnt}/{len(loader)}")
             cnt += 1
             x = batch[0].squeeze()
