@@ -41,7 +41,7 @@ def main():
         args: Namespace = parse_args()
 
     data: Data = DataGetter.get_data(args.batch_size, args.sequence_length)
-    traindata = PennDataset(data.train_dataset)
+    traindata = PennDataset(data.train_dataset[:100])
     testdata = PennDataset(data.test_dataset)
     # model_gru_no_dropout: ModelBase = get_model(ModelType.GRU, data.vocabulary_size, 0,
     #                                             args.num_of_layers, args.hidden_layer_units,

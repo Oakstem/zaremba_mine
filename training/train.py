@@ -45,7 +45,7 @@ def train(model: ModelBase, data: Data, total_epochs_num: int, first_epoch_modif
 def train_one_epoch(model: ModelBase, data: Data, learning_rate: float, max_gradients_norm: float, device: str or int):
     train_dataset_length = len(data.train_dataset)
 
-    states = model.state_init(data.batch_size)
+    states = model.state_init()
     model.train()
 
     for current_data_index, (x, y) in enumerate(data.train_dataset):

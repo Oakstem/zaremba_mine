@@ -18,6 +18,8 @@ import torchvision as tv
 from argparse import Namespace
 from model.model_base import ModelBase
 from model.model_getter import get_model
+from training.perplexity import perplexity
+import numpy as np
 
 
 # Read in the hyper-parameters and return a Run namedtuple containing all the
@@ -99,20 +101,29 @@ class RunManager():
     self.test_epoch_num_correct = 0
 
   # 
-  def end_epoch(self):
+  def end_epoch(self, network, device):
     # calculate epoch duration and run duration(accumulate)
     epoch_duration = time.time() - self.epoch_start_time
     run_duration = time.time() - self.run_start_time
 
     # record epoch loss and accuracy
-    loss = self.epoch_loss / len(self.loader.dataset)
-    test_loss = self.test_epoch_loss / len(self.test_loader.dataset)
-    accuracy = 100*self.epoch_num_correct / len(self.loader.dataset)
-    test_accuracy = 100*self.test_epoch_num_correct / len(self.test_loader.dataset)
+    no_samples_in_batch = self.loader.dataset[0][0].shape[0]*self.loader.dataset[0][0].shape[1]
+    self.epoch_loss = self.epoch_loss/len(self.loader.dataset)
+    self.test_epoch_loss = self.test_epoch_loss/len(self.test_loader.dataset)
+    accuracy = 100*self.epoch_num_correct / (len(self.loader.dataset)*no_samples_in_batch)
+    test_accuracy = 100*self.test_epoch_num_correct / (len(self.test_loader.dataset)*no_samples_in_batch)
+
+    train_perplexity = np.exp(self.epoch_loss)
+    test_perplexity = np.exp(self.test_epoch_loss)
 
     # Record epoch loss and accuracy to TensorBoard
-    self.tb.add_scalars('Loss', {'Train':loss, 'Test':test_loss}, self.epoch_count)
-    self.tb.add_scalars('Accuracy', {'Train':accuracy, 'Test':test_accuracy}, self.epoch_count)
+    self.tb.add_scalar('Loss/train', self.epoch_loss, self.epoch_count)
+    self.tb.add_scalar('Loss/test', self.test_epoch_loss, self.epoch_count)
+    self.tb.add_scalar('Accuracy/train', accuracy, self.epoch_count)
+    self.tb.add_scalar('Accuracy/test', test_accuracy, self.epoch_count)
+    # self.tb.add_scalars('Accuracy', {'Train':accuracy, 'Test':test_accuracy}, self.epoch_count)
+    self.tb.add_scalar('Perplexity/train', train_perplexity, self.epoch_count)
+    self.tb.add_scalar('Perplexity/test', test_perplexity, self.epoch_count)
 
     # Record params to TensorBoard
     for name, param in self.network.named_parameters():
@@ -123,7 +134,7 @@ class RunManager():
     results = OrderedDict()
     results["run"] = self.run_count
     results["epoch"] = self.epoch_count
-    results["loss"] = loss
+    results["loss"] = self.epoch_loss
     results["accuracy"] = accuracy
     results["epoch duration"] = epoch_duration
     results["run duration"] = run_duration
@@ -140,11 +151,11 @@ class RunManager():
 
   # accumulate loss of batch into entire epoch loss
   def track_loss(self, loss, train):
-    # multiply batch size so variety of batch sizes can be compared
+
     if train==1:
-      self.epoch_loss += loss.item() * self.loader.batch_size
+      self.epoch_loss += loss.item()
     else:
-      self.test_epoch_loss += loss.item() * self.test_loader.batch_size
+      self.test_epoch_loss += loss.item()
 
   # accumulate number of corrects of batch into entire epoch num_correct
   def track_num_correct(self, preds, y, train):
@@ -196,9 +207,11 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
           network.train()
           network.state_init()
           device: str or int = next(network.parameters()).device
+          btch_cnt = 0
           # Run a batch in train mode
           cnt = 0
           for batch in loader:
+            btch_cnt += 1
             if not cm.IN_COLAB and cnt % 50 == 0:
               print(f"Batch No.{cnt}/{len(loader)}")
             cnt += 1
@@ -223,12 +236,13 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
             torch.nn.utils.clip_grad_norm_(network.parameters(), args.max_gradients_norm)
             optimizer.step()
 
-            m.track_loss(loss, train=1)
+            m.track_loss(loss/network.batch_sz, train=1)
             m.track_num_correct(scores, y, train=1)
 
           print(f'Epoch No:{epoch} '
-                f'Loss:{m.epoch_loss}')
+                f'Loss:{m.epoch_loss/len(loader.dataset)}')
           # Same run for Test only without backprop
+          torch.no_grad()
           network.eval()
           states = network.state_init()
           for batch in testloader:
@@ -237,10 +251,10 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
             preds, states = network(x,states)
             # loss = F.cross_entropy(preds, y)
             loss = criterion(preds, y)
-            m.track_loss(loss, train=0)
+            m.track_loss(loss/network.batch_sz, train=0)
             m.track_num_correct(preds, y, train=0)
 
-          m.end_epoch()
+          m.end_epoch(network, device)
           if epoch%2 == 0:
             torch.save(network, f'results/{run}.model')
         m.end_run()

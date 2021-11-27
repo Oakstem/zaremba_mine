@@ -9,7 +9,7 @@ def perplexity(model: ModelBase, dataset: list, batch_size: int, device: str or 
     model.eval()
     torch.no_grad()
 
-    states = model.state_init(batch_size)
+    states = model.state_init()
 
     model.eval()
 
