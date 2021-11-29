@@ -113,8 +113,8 @@ class RunManager():
     accuracy = 100*self.epoch_num_correct / (len(self.loader.dataset)*no_samples_in_batch)
     test_accuracy = 100*self.test_epoch_num_correct / (len(self.test_loader.dataset)*no_samples_in_batch)
 
-    train_perplexity = np.exp(np.mean(self.epoch_loss))
-    test_perplexity = np.exp(np.mean(self.test_epoch_loss))
+    train_perplexity = np.exp(self.epoch_loss)
+    test_perplexity = np.exp(self.test_epoch_loss)
 
     # Record epoch loss and accuracy to TensorBoard
     self.tb.add_scalar('Loss/train', self.epoch_loss, self.epoch_count)
@@ -127,9 +127,11 @@ class RunManager():
     # Record params to TensorBoard
     for name, param in self.network.named_parameters():
       if param.grad.is_sparse:
-        param.grad = param.grad.to_dense()
+        grad_for_hist = param.grad.to_dense()
+      else:
+        grad_for_hist = param.grad
       self.tb.add_histogram(name, param, self.epoch_count)
-      self.tb.add_histogram(f'{name}.grad', param.grad, self.epoch_count)
+      self.tb.add_histogram(f'{name}.grad', grad_for_hist, self.epoch_count)
     
     # Write into 'results' (OrderedDict) for all run related data
     results = OrderedDict()
