@@ -271,20 +271,23 @@ def background_train(run, data, train_data, test_data, criterion, args: Namespac
     m.end_epoch(network, device)
     if epoch % 2 == 0:
       torch.save(network, f'results/{run}.model')
-  m.end_run()
-  torch.save(network, f'results/{run}.model')
-  # when run is done, save results to files
+    m.end_run()
+    torch.save(network, f'results/{run}.model')
+    # when run is done, save results to files
   m.save(f'{run}')
+  return 1
 
 def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
                        params=cm.params, epochs=5):
 
-
+    runs_num = len(RunBuilder.get_runs(params))
     # get all runs from params using RunBuilder class
+    cnt = 0
     for run in RunBuilder.get_runs(params):
-      background_train(run, data, train_data, test_data, criterion, args,
+      cnt += background_train(run, data, train_data, test_data, criterion, args,
       params, epochs)
-
-
+    while cnt < len(RunBuilder.get_runs(params)):
+      time.sleep(60)
+      print(f'completed runs: {cnt}')
 
 
