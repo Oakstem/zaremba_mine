@@ -275,7 +275,6 @@ def background_train(run, data, train_data, test_data, criterion, args: Namespac
     torch.save(network, f'results/{run}.model')
     # when run is done, save results to files
   m.save(f'{run}')
-  return 1
 
 def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
                        params=cm.params, epochs=5):
