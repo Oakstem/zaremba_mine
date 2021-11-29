@@ -137,8 +137,10 @@ class RunManager():
     results = OrderedDict()
     results["run"] = self.run_count
     results["epoch"] = self.epoch_count
-    results["loss"] = self.epoch_loss
-    results["accuracy"] = accuracy
+    results["train/loss"] = self.epoch_loss
+    results["test/loss"] = self.test_epoch_loss
+    results["train/perplexity"] = train_perplexity
+    results["test/perplexity"] = test_perplexity
     results["epoch duration"] = epoch_duration
     results["run duration"] = run_duration
 
@@ -183,90 +185,106 @@ class RunManager():
     with open(f'results/{fileName}.json', 'w', encoding='utf-8') as f:
       json.dump(self.run_data, f, ensure_ascii=False, indent=4)
 
+import asyncio
+import time
+
+
+def background(f):
+    def wrapped(*args, **kwargs):
+        return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
+
+    return wrapped
+
+
+@background
+def background_train(run, data, train_data, test_data, criterion, args: Namespace,
+                       params=cm.params, epochs=5):
+  m = RunManager(image=False)
+  # if params changes, following line of code should reflect the changes too
+  network: ModelBase = get_model(run.model_type, data.vocabulary_size, run.dropout,
+                                 run.layers_num, args.hidden_layer_units,
+                                 args.weights_uniforming, args.batch_size)
+
+  loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=False)
+  testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
+  # Setting a different optimizer for the Embedding & all other model params
+
+  optimizer = torch.optim.Adam(list(network.parameters())[1:], lr=run.lr)  # other model params
+  optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.1)  # embedding param
+
+  m.begin_run(run, network, loader, testloader)
+  for epoch in range(epochs):
+    m.begin_epoch()
+    network.train()
+    states = network.state_init()
+    device: str or int = next(network.parameters()).device
+    btch_cnt = 0
+    # Run a batch in train mode
+    cnt = 0
+    for batch in loader:
+      btch_cnt += 1
+      if cnt % 50 == 0:
+        print(f"Batch No.{cnt}/{len(loader)}")
+      cnt += 1
+      x = batch[0].squeeze()
+      y = batch[1].squeeze()
+
+      x = x.to(device)
+      y = y.to(device)
+      # network.zero_grad()
+      optimizer.zero_grad()
+      optimizerE.zero_grad()
+
+      states = network.detach(states)
+      states2 = states.copy()
+
+      scores, states = network(x, states)
+      # if states[0].isnan().sum() > 0:
+      #   stop = 1
+      loss = criterion(scores, y)
+      loss.backward()
+
+      torch.nn.utils.clip_grad_norm_(network.parameters(), args.max_gradients_norm)
+      optimizer.step()
+      optimizerE.step()
+      # if network.embedding.weight.isnan().sum() > 0:
+      #   stop =1
+      m.track_loss(loss / network.batch_sz, train=1)
+      # m.track_num_correct(scores, y, train=1)   Using Perplexity instead of Accuracy measurement
+
+    print(f'Epoch No:{epoch}')
+    print("Loss:{0:.2f}".format(m.epoch_loss / len(loader.dataset)))
+
+    # Same run for Test only without backprop
+    torch.no_grad()
+    network.eval()
+    states = network.state_init()
+    for batch in testloader:
+      x = batch[0].squeeze()
+      y = batch[1].squeeze()
+      preds, states = network(x, states)
+      # loss = F.cross_entropy(preds, y)
+      loss = criterion(preds, y)
+      m.track_loss(loss / network.batch_sz, train=0)
+      m.track_num_correct(preds, y, train=0)
+
+    m.end_epoch(network, device)
+    if epoch % 2 == 0:
+      torch.save(network, f'results/{run}.model')
+  m.end_run()
+  torch.save(network, f'results/{run}.model')
+  # when run is done, save results to files
+  m.save(f'{run}')
 
 def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
                        params=cm.params, epochs=5):
 
-    m = RunManager(image=False)
+
     # get all runs from params using RunBuilder class
     for run in RunBuilder.get_runs(params):
-        # if params changes, following line of code should reflect the changes too
-        network: ModelBase = get_model(run.model_type, data.vocabulary_size, run.dropout,
-                                       run.layers_num, args.hidden_layer_units,
-                                       args.weights_uniforming, args.batch_size)
-
-        loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=False)
-        testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
-        # Setting a different optimizer for the Embedding & all other model params
-
-        optimizer = torch.optim.Adam(list(network.parameters())[1:], lr=run.lr)   # other model params
-        optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.1)  # embedding param
+      background_train(run, data, train_data, test_data, criterion, args,
+      params, epochs)
 
 
-        m.begin_run(run, network, loader, testloader)
-        for epoch in range(epochs):
-          m.begin_epoch()
-          network.train()
-          states = network.state_init()
-          device: str or int = next(network.parameters()).device
-          btch_cnt = 0
-          # Run a batch in train mode
-          cnt = 0
-          for batch in loader:
-            btch_cnt += 1
-            if cnt % 50 == 0:
-              print(f"Batch No.{cnt}/{len(loader)}")
-            cnt += 1
-            x = batch[0].squeeze()
-            y = batch[1].squeeze()
-
-            x = x.to(device)
-            y = y.to(device)
-            # network.zero_grad()
-            optimizer.zero_grad()
-            optimizerE.zero_grad()
-
-            states = network.detach(states)
-            states2 = states.copy()
-
-            scores, states = network(x, states)
-            # if states[0].isnan().sum() > 0:
-            #   stop = 1
-            loss = criterion(scores, y)
-            loss.backward()
-
-            torch.nn.utils.clip_grad_norm_(network.parameters(), args.max_gradients_norm)
-            optimizer.step()
-            optimizerE.step()
-            # if network.embedding.weight.isnan().sum() > 0:
-            #   stop =1
-            m.track_loss(loss/network.batch_sz, train=1)
-            # m.track_num_correct(scores, y, train=1)   Using Perplexity instead of Accuracy measurement
-
-          print(f'Epoch No:{epoch}')
-          print("Loss:{0:.2f}".format(m.epoch_loss/len(loader.dataset)))
-
-          # Same run for Test only without backprop
-          torch.no_grad()
-          network.eval()
-          states = network.state_init()
-          for batch in testloader:
-            x = batch[0].squeeze()
-            y = batch[1].squeeze()
-            preds, states = network(x,states)
-            # loss = F.cross_entropy(preds, y)
-            loss = criterion(preds, y)
-            m.track_loss(loss/network.batch_sz, train=0)
-            m.track_num_correct(preds, y, train=0)
-
-          m.end_epoch(network, device)
-          if epoch%2 == 0:
-            torch.save(network, f'results/{run}.model')
-        m.end_run()
-        torch.save(network, f'results/{run}.model')
-
-
-    # when all runs are done, save results to files
-    m.save(f'{run}')
 
 

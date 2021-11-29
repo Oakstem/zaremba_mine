@@ -15,6 +15,8 @@ from collections  import OrderedDict
 from collections  import namedtuple
 import common as cm
 
+
+
 try:
   import google.colab
   IN_COLAB = True
