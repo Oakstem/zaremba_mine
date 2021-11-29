@@ -11,8 +11,9 @@ class ModelBase(nn.Module, metaclass=abc.ABCMeta):
     def __init__(self, vocab_size: int, num_of_layers: int, hidden_layer_units: int,
                  dropout: float, weights_uniforming: float, batch_sz: int):
         super().__init__()
-
-        self.embedding: nn.Embedding = nn.Embedding(vocab_size, hidden_layer_units)
+        self.vocabsz = vocab_size
+        self.hiddenu = hidden_layer_units
+        self.embedding: nn.Embedding = nn.Embedding(vocab_size, hidden_layer_units, sparse=True)
 
         self.rnns: nn.ModuleList = nn.ModuleList()
         rnns_type: type = self.get_rnn_type()
@@ -54,4 +55,5 @@ class ModelBase(nn.Module, metaclass=abc.ABCMeta):
             x: Tensor = self.dropout(x)
         x = x.view(x.size()[0] * x.size()[1], -1)
         scores: Tensor = self.fc(x)
+
         return scores, states

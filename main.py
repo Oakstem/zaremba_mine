@@ -25,11 +25,11 @@ except:
 
 def main():
     params = OrderedDict(
-        model_type=['ModelType.GRU', 'ModelType.LSTM'],
-        lr=[.001],
+        model_type=['ModelType.GRU'], #, 'ModelType.LSTM'],
+        lr=[0.001],
         batch_size=[20],
-        shuffle=[False],
-        dropout=[0, 0.5],
+        dropout=[0],
+        layers_num=[4]
     )
 
     if cm.IN_COLAB:
@@ -43,25 +43,8 @@ def main():
     data: Data = DataGetter.get_data(args.batch_size, args.sequence_length)
     traindata = PennDataset(data.train_dataset[:100])
     testdata = PennDataset(data.test_dataset)
-    # model_gru_no_dropout: ModelBase = get_model(ModelType.GRU, data.vocabulary_size, 0,
-    #                                             args.num_of_layers, args.hidden_layer_units,
-    #                                             args.weights_uniforming, args.batch_size)
-    # train_model("GRU No Dropout", model_gru_no_dropout, data, args)
-    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=10)
-    # model_gru_dropout: ModelBase = get_model(ModelType.GRU, data.vocabulary_size, args.dropout,
-    #                                          args.num_of_layers, args.hidden_layer_units,
-    #                                          args.weights_uniforming)
-    # train_model("GRU With Dropout", model_gru_dropout, data, args)
-    #
-    # model_lstm_no_dropout: ModelBase = get_model(ModelType.LSTM, data.vocabulary_size, 0,
-    #                                              args.num_of_layers, args.hidden_layer_units,
-    #                                              args.weights_uniforming)
-    # train_model("LSTM No Dropout", model_lstm_no_dropout, data, args)
-    #
-    # model_lstm_dropout: ModelBase = get_model(ModelType.LSTM, data.vocabulary_size, args.dropout,
-    #                                           args.num_of_layers, args.hidden_layer_units,
-    #                                           args.weights_uniforming)
-    # train_model("LSTM With Dropout", model_lstm_dropout, data, args)
+
+    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=1)
 
 
 def train_model(title: str, model: ModelBase, data: Data, args: Namespace):

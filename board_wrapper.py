@@ -113,20 +113,21 @@ class RunManager():
     accuracy = 100*self.epoch_num_correct / (len(self.loader.dataset)*no_samples_in_batch)
     test_accuracy = 100*self.test_epoch_num_correct / (len(self.test_loader.dataset)*no_samples_in_batch)
 
-    train_perplexity = np.exp(self.epoch_loss)
-    test_perplexity = np.exp(self.test_epoch_loss)
+    train_perplexity = np.exp(np.mean(self.epoch_loss))
+    test_perplexity = np.exp(np.mean(self.test_epoch_loss))
 
     # Record epoch loss and accuracy to TensorBoard
     self.tb.add_scalar('Loss/train', self.epoch_loss, self.epoch_count)
     self.tb.add_scalar('Loss/test', self.test_epoch_loss, self.epoch_count)
-    self.tb.add_scalar('Accuracy/train', accuracy, self.epoch_count)
-    self.tb.add_scalar('Accuracy/test', test_accuracy, self.epoch_count)
-    # self.tb.add_scalars('Accuracy', {'Train':accuracy, 'Test':test_accuracy}, self.epoch_count)
+    # self.tb.add_scalar('Accuracy/train', accuracy, self.epoch_count)
+    # self.tb.add_scalar('Accuracy/test', test_accuracy, self.epoch_count)
     self.tb.add_scalar('Perplexity/train', train_perplexity, self.epoch_count)
     self.tb.add_scalar('Perplexity/test', test_perplexity, self.epoch_count)
 
     # Record params to TensorBoard
     for name, param in self.network.named_parameters():
+      if param.grad.is_sparse:
+        param.grad = param.grad.to_dense()
       self.tb.add_histogram(name, param, self.epoch_count)
       self.tb.add_histogram(f'{name}.grad', param.grad, self.epoch_count)
     
@@ -177,70 +178,72 @@ class RunManager():
         orient = 'columns',
     ).to_csv(f'results/{fileName}.csv')
 
-    with open(f'{fileName}.json', 'w', encoding='utf-8') as f:
+    with open(f'results/{fileName}.json', 'w', encoding='utf-8') as f:
       json.dump(self.run_data, f, ensure_ascii=False, indent=4)
 
 
 def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
                        params=cm.params, epochs=5):
-    # put all hyper params into a OrderedDict, easily expandable
 
     m = RunManager(image=False)
     # get all runs from params using RunBuilder class
     for run in RunBuilder.get_runs(params):
         # if params changes, following line of code should reflect the changes too
         network: ModelBase = get_model(run.model_type, data.vocabulary_size, run.dropout,
-                                       args.num_of_layers, args.hidden_layer_units,
+                                       run.layers_num, args.hidden_layer_units,
                                        args.weights_uniforming, args.batch_size)
 
-        loader = torch.utils.data.DataLoader(train_data, batch_size = 1, shuffle=run.shuffle)
-        testloader = torch.utils.data.DataLoader(test_data, batch_size = 1, shuffle=run.shuffle)
-        optimizer = torch.optim.Adam(network.parameters(), lr=run.lr)
+        loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=False)
+        testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
+        # Setting a different optimizer for the Embedding & all other model params
+
+        optimizer = torch.optim.Adam(list(network.parameters())[1:], lr=run.lr)   # other model params
+        optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.1)  # embedding param
 
 
-
-        states = network.state_init()
         m.begin_run(run, network, loader, testloader)
         for epoch in range(epochs):
-
           m.begin_epoch()
           network.train()
-          network.state_init()
+          states = network.state_init()
           device: str or int = next(network.parameters()).device
           btch_cnt = 0
           # Run a batch in train mode
           cnt = 0
           for batch in loader:
             btch_cnt += 1
-            if not cm.IN_COLAB and cnt % 50 == 0:
+            if cnt % 50 == 0:
               print(f"Batch No.{cnt}/{len(loader)}")
             cnt += 1
             x = batch[0].squeeze()
             y = batch[1].squeeze()
 
-            # preds, states = network(x, states)
-            # loss = criterion(preds, y)
-
-            # optimizer.zero_grad()
-            # loss.backward()
-            # optimizer.step()
-
             x = x.to(device)
             y = y.to(device)
-            network.zero_grad()
+            # network.zero_grad()
+            optimizer.zero_grad()
+            optimizerE.zero_grad()
+
             states = network.detach(states)
+            states2 = states.copy()
+
             scores, states = network(x, states)
+            # if states[0].isnan().sum() > 0:
+            #   stop = 1
             loss = criterion(scores, y)
             loss.backward()
 
             torch.nn.utils.clip_grad_norm_(network.parameters(), args.max_gradients_norm)
             optimizer.step()
-
+            optimizerE.step()
+            # if network.embedding.weight.isnan().sum() > 0:
+            #   stop =1
             m.track_loss(loss/network.batch_sz, train=1)
-            m.track_num_correct(scores, y, train=1)
+            # m.track_num_correct(scores, y, train=1)   Using Perplexity instead of Accuracy measurement
 
-          print(f'Epoch No:{epoch} '
-                f'Loss:{m.epoch_loss/len(loader.dataset)}')
+          print(f'Epoch No:{epoch}')
+          print("Loss:{0:.2f}".format(m.epoch_loss/len(loader.dataset)))
+
           # Same run for Test only without backprop
           torch.no_grad()
           network.eval()
@@ -262,8 +265,6 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
 
 
     # when all runs are done, save results to files
-    m.save(cm.LOG_DIR + '/results')
+    m.save(f'{run}')
 
-
-"""# Train with RunManager"""
 
