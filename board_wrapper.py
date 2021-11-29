@@ -279,11 +279,9 @@ def background_train(run, data, train_data, test_data, criterion, args: Namespac
 def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
                        params=cm.params, epochs=5):
 
-    runs_num = len(RunBuilder.get_runs(params))
     # get all runs from params using RunBuilder class
-    cnt = 0
+
     for run in RunBuilder.get_runs(params):
-      background_train(run, data, train_data, test_data, criterion, args,
-      params, epochs)
+      background_train(run, data, train_data, test_data, criterion, args, params, epochs)
 
 
