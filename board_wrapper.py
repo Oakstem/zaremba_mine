@@ -284,10 +284,7 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
     # get all runs from params using RunBuilder class
     cnt = 0
     for run in RunBuilder.get_runs(params):
-      cnt += background_train(run, data, train_data, test_data, criterion, args,
+      background_train(run, data, train_data, test_data, criterion, args,
       params, epochs)
-    while cnt < len(RunBuilder.get_runs(params)):
-      time.sleep(60)
-      print(f'completed runs: {cnt}')
 
 
