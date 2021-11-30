@@ -197,7 +197,7 @@ def background(f):
 
 
 @background
-def background_train(run, data, train_data, test_data, criterion, args: Namespace,
+def background_train(i: int, run, data, train_data, test_data, criterion, args: Namespace,
                        params=cm.params, epochs=5):
   m = RunManager(image=False)
   # if params changes, following line of code should reflect the changes too
@@ -224,7 +224,7 @@ def background_train(run, data, train_data, test_data, criterion, args: Namespac
     for batch in loader:
       btch_cnt += 1
       if cnt % 50 == 0:
-        print(f"Batch No.{cnt}/{len(loader)}")
+        print(f"Run: {i}, Batch No.{cnt}/{len(loader)}")
       cnt += 1
       x = batch[0].squeeze()
       y = batch[1].squeeze()
@@ -281,7 +281,8 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
 
     # get all runs from params using RunBuilder class
 
-    for run in RunBuilder.get_runs(params):
-      background_train(run, data, train_data, test_data, criterion, args, params, epochs)
+    for i, run in enumerate(RunBuilder.get_runs(params)):
+      background_train(i, run, data, train_data, test_data, criterion, args, params, epochs)
+
 
 

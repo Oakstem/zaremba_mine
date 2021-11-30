@@ -47,7 +47,11 @@ def main():
     testdata = PennDataset(data.test_dataset)
 
     train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=2)
-
+    import asyncio
+    # pending = asyncio.all_tasks()
+    loop = asyncio.get_event_loop()
+    # loop.run_until_complete(asyncio.gather(*pending))
+    test = 1
 
 def train_model(title: str, model: ModelBase, data: Data, args: Namespace):
     print("Model: " + title)
