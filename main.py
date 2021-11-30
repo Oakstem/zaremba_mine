@@ -28,10 +28,10 @@ except:
 def main():
     params = OrderedDict(
         model_type=['ModelType.GRU', 'ModelType.LSTM'],
-        lr=[0.001, 0.01],
+        lr=[0.001],
         batch_size=[20],
-        dropout=[0, 0.4, 0.5],
-        layers_num=[2, 4]
+        dropout=[0.5],
+        layers_num=[2]
     )
 
     if cm.IN_COLAB:
@@ -43,15 +43,10 @@ def main():
         args: Namespace = parse_args()
 
     data: Data = DataGetter.get_data(args.batch_size, args.sequence_length)
-    traindata = PennDataset(data.train_dataset)
+    traindata = PennDataset(data.train_dataset[:20])
     testdata = PennDataset(data.test_dataset)
 
-    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=2)
-    import asyncio
-    # pending = asyncio.all_tasks()
-    loop = asyncio.get_event_loop()
-    # loop.run_until_complete(asyncio.gather(*pending))
-    test = 1
+    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=5)
 
 def train_model(title: str, model: ModelBase, data: Data, args: Namespace):
     print("Model: " + title)

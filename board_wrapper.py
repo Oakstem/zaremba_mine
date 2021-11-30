@@ -38,17 +38,17 @@ class RunBuilder():
 # Helper class, help track loss, accuracy, epoch time, run time, 
 # hyper-parameters etc. Also record to TensorBoard and write into csv, json
 class RunManager():
-  def __init__(self, image=False):
+  def __init__(self, image=False, epoch_count=0, run_no=0):
 
     # tracking every epoch count, loss, accuracy, time
-    self.epoch_count = 0
+    self.epoch_count = epoch_count
     self.epoch_loss = 0
     self.epoch_num_correct = 0
     self.epoch_start_time = None
 
     # tracking every run count, run data, hyper-params used, time
     self.run_params = None
-    self.run_count = 0
+    self.run_count = run_no
     self.run_data = []
     self.run_start_time = None
 
@@ -175,12 +175,14 @@ class RunManager():
     return amax.eq(y.view(amax.shape)).sum().item()
   
   # save end results of all runs into csv, json for further analysis
-  def save(self, fileName):
-
-    pd.DataFrame.from_dict(
-        self.run_data, 
-        orient = 'columns',
-    ).to_csv(f'results/{fileName}.csv')
+  def save(self, fileName, df):
+    if not df.empty:
+      res_df = df.append(pd.DataFrame.from_dict(self.run_data, orient = 'columns'))
+    else:
+      res_df = pd.DataFrame.from_dict(
+          self.run_data,
+          orient = 'columns')
+    res_df.to_csv(f'results/{fileName}.csv')
 
     with open(f'results/{fileName}.json', 'w', encoding='utf-8') as f:
       json.dump(self.run_data, f, ensure_ascii=False, indent=4)
@@ -201,10 +203,18 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
                        params=cm.params, epochs=5):
   m = RunManager(image=False)
   # if params changes, following line of code should reflect the changes too
-  network: ModelBase = get_model(run.model_type, data.vocabulary_size, run.dropout,
-                                 run.layers_num, args.hidden_layer_units,
-                                 args.weights_uniforming, args.batch_size)
-
+  try:
+    network = torch.load(f'results/{run}.model')
+    df = pd.read_csv(f'results/{run}.csv', index_col=0)
+    epoch_start = df['epoch'].iloc[-1]
+    print(f'Run:{i} loaded a previous model and continue its training from epoch:{epoch_start}')
+  except:
+    df = pd.DataFrame()
+    network: ModelBase = get_model(run.model_type, data.vocabulary_size, run.dropout,
+                                   run.layers_num, args.hidden_layer_units,
+                                   args.weights_uniforming, args.batch_size)
+    epoch_start = 0
+  m = RunManager(epoch_count=epoch_start, run_no=i)
   loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=False)
   testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
   # Setting a different optimizer for the Embedding & all other model params
@@ -213,7 +223,7 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
   optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.1)  # embedding param
 
   m.begin_run(run, network, loader, testloader)
-  for epoch in range(epochs):
+  for epoch in range(epoch_start, epochs):
     m.begin_epoch()
     network.train()
     states = network.state_init()
@@ -236,19 +246,14 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
       optimizerE.zero_grad()
 
       states = network.detach(states)
-      states2 = states.copy()
-
       scores, states = network(x, states)
-      # if states[0].isnan().sum() > 0:
-      #   stop = 1
       loss = criterion(scores, y)
       loss.backward()
 
       torch.nn.utils.clip_grad_norm_(network.parameters(), args.max_gradients_norm)
       optimizer.step()
       optimizerE.step()
-      # if network.embedding.weight.isnan().sum() > 0:
-      #   stop =1
+
       m.track_loss(loss / network.batch_sz, train=1)
       # m.track_num_correct(scores, y, train=1)   Using Perplexity instead of Accuracy measurement
 
@@ -271,15 +276,16 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
     m.end_epoch(network, device)
     if epoch % 2 == 0:
       torch.save(network, f'results/{run}.model')
-    m.end_run()
-    torch.save(network, f'results/{run}.model')
+  m.end_run()
+  torch.save(network, f'results/{run}.model')
     # when run is done, save results to files
-  m.save(f'{run}')
+  m.save(f'{run}', df)
 
 def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
                        params=cm.params, epochs=5):
 
-    # get all runs from params using RunBuilder class
+    # create array of dataframes for every run
+    # dfs = [pd.DataFrame() for i in range(len(RunBuilder.get_runs(params)))]
 
     for i, run in enumerate(RunBuilder.get_runs(params)):
       background_train(i, run, data, train_data, test_data, criterion, args, params, epochs)
