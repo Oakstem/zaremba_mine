@@ -241,7 +241,7 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
 
       x = x.to(device)
       y = y.to(device)
-      # network.zero_grad()
+
       optimizer.zero_grad()
       optimizerE.zero_grad()
 
@@ -274,8 +274,9 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
       m.track_num_correct(preds, y, train=0)
 
     m.end_epoch(network, device)
-    if epoch % 2 == 0:
-      torch.save(network, f'results/{run}.model')
+    # if epoch % 2 == 0:
+    torch.save(network, f'results/{run}.model')
+    m.save(f'{run}', df)
   m.end_run()
   torch.save(network, f'results/{run}.model')
     # when run is done, save results to files
