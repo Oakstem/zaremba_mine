@@ -138,13 +138,13 @@ class RunManager():
     # Write into 'results' (OrderedDict) for all run related data
     results = OrderedDict()
     results["run"] = self.run_count
-    results["epoch"] = self.epoch_count
-    results["train/loss"] = self.epoch_loss
-    results["test/loss"] = self.test_epoch_loss
-    results["train/perplexity"] = train_perplexity
-    results["test/perplexity"] = test_perplexity
-    results["epoch duration"] = epoch_duration
-    results["run duration"] = run_duration
+    results["epoch"] = int(self.epoch_count)
+    results["train/loss"] = int(self.epoch_loss)
+    results["test/loss"] = int(self.test_epoch_loss)
+    results["train/perplexity"] = int(train_perplexity)
+    results["test/perplexity"] = int(test_perplexity)
+    results["epoch duration"] = int(epoch_duration)
+    results["run duration"] = int(run_duration)
 
     # Record hyper-params into 'results'
     for k,v in self.run_params._asdict().items(): results[k] = v
@@ -156,6 +156,7 @@ class RunManager():
       clear_output(wait=True)
       display(df)
 
+    print(f'Epoch No:{self.epoch_count}, TrainLoss:{self.epoch_loss:.2f}, TestLoss{self.test_epoch_loss:.2f}')
   # accumulate loss of batch into entire epoch loss
   def track_loss(self, loss, train):
 
@@ -192,15 +193,15 @@ class RunManager():
 import asyncio
 import time
 
+#
+# def background(f):
+#     def wrapped(*args, **kwargs):
+#         return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
+#
+#     return wrapped
 
-def background(f):
-    def wrapped(*args, **kwargs):
-        return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
-
-    return wrapped
-
-
-@background
+#
+# @background
 def background_train(i: int, run: dict, data: object, train_data, test_data, criterion, args: Namespace, epochs: int,
                        params=cm.params):
   m = RunManager(image=False)
@@ -222,10 +223,12 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
   # Setting a different optimizer for the Embedding & all other model params
 
   optimizer = torch.optim.Adam(list(network.parameters())[1:], lr=run.lr)  # other model params
-  optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.1)  # embedding param
+  optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.001)  # embedding param
 
   m.begin_run(run, network, loader, testloader)
   for epoch in range(epoch_start, epochs):
+    if i == 0:
+      stop =1
     m.begin_epoch()
     network.train()
     states = network.state_init()
@@ -235,7 +238,7 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
     cnt = 0
     for batch in loader:
       btch_cnt += 1
-      if cnt % 50 == 0:
+      if cnt % 100 == 0:
         print(f"Run: {i}, Batch No.{cnt}/{len(loader)}")
       cnt += 1
       x = batch[0].squeeze()
@@ -253,13 +256,14 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
       loss.backward()
 
       torch.nn.utils.clip_grad_norm_(network.parameters(), args.max_gradients_norm)
+      torch.nn.utils.clip_grad_norm_([list(network.parameters())[0]], 1)
       optimizer.step()
       optimizerE.step()
-
+      if network.embedding.weight.isnan().count_nonzero()>0 or\
+              network.embedding.weight.grad.to_dense().isnan().count_nonzero() > 0:
+        print(f'Run:{i}, embedding layer exploded once again :(')
       m.track_loss(loss / network.batch_sz, train=1)
       # m.track_num_correct(scores, y, train=1)   Using Perplexity instead of Accuracy measurement
-
-    print(f'Epoch No:{epoch}, Loss:{(m.epoch_loss / len(loader.dataset)):.2f}')
 
     # Same run for Test only without backprop
     torch.no_grad()
@@ -275,7 +279,6 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
       m.track_num_correct(preds, y, train=0)
 
     m.end_epoch(network, device)
-    # if epoch % 2 == 0:
     torch.save(network, f'results/{run}.model')
     m.save(f'{run}', df)
   m.end_run(i)

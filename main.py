@@ -30,7 +30,7 @@ def main():
         model_type=['ModelType.LSTM'],
         lr=[0.001],
         batch_size=[20],
-        dropout=[0.5, 0],
+        dropout=[0.5],
         layers_num=[2]
     )
 
@@ -46,7 +46,7 @@ def main():
     traindata = PennDataset(data.train_dataset)
     testdata = PennDataset(data.test_dataset)
 
-    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=8)
+    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=20)
 
 def train_model(title: str, model: ModelBase, data: Data, args: Namespace):
     print("Model: " + title)
