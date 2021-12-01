@@ -46,7 +46,7 @@ def main():
     traindata = PennDataset(data.train_dataset)
     testdata = PennDataset(data.test_dataset)
 
-    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=5)
+    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=8)
 
 def train_model(title: str, model: ModelBase, data: Data, args: Namespace):
     print("Model: " + title)

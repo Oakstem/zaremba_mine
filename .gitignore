@@ -1,5 +1,6 @@
 *
 !*.py
+!runs/*tfevents*
 !data/
 !data/text/
 !model/
@@ -8,4 +9,4 @@
 !.gitignore
 !*.ipynb
 !*.txt
-!.runs/*
+!runs/*

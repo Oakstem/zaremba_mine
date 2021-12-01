@@ -201,8 +201,8 @@ def background(f):
 
 
 @background
-def background_train(i: int, run, data, train_data, test_data, criterion, args: Namespace,
-                       params=cm.params, epochs=5):
+def background_train(i: int, run: dict, data: object, train_data, test_data, criterion, args: Namespace, epochs: int,
+                       params=cm.params):
   m = RunManager(image=False)
   # if params changes, following line of code should reflect the changes too
   try:
@@ -283,14 +283,14 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
     # when run is done, save results to files
   m.save(f'{run}', df)
 
-def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace,
-                       params=cm.params, epochs=5):
+def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace, epochs: int,
+                       params=cm.params, ):
 
     # create array of dataframes for every run
     # dfs = [pd.DataFrame() for i in range(len(RunBuilder.get_runs(params)))]
 
     for i, run in enumerate(RunBuilder.get_runs(params)):
-      background_train(i, run, data, train_data, test_data, criterion, args, params, epochs)
+      background_train(i, run, data, train_data, test_data, criterion, args, epochs, params)
 
 
 
