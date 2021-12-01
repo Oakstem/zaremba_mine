@@ -15,5 +15,5 @@ except:
   IN_COLAB = False
 
 # Paths:
-LOG_DIR = '.runs/'
-Model_DIR = '.saved_models/'
+LOG_DIR = 'runs/'
+Model_DIR = 'saved_models/'

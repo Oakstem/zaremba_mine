@@ -90,7 +90,7 @@ class RunManager():
     self.tb.close()
     self.epoch_count = 0
     print(f"Run No.{i} ended")
-      
+
 
   # zero epoch count, loss, accuracy, 
   def begin_epoch(self):
@@ -109,11 +109,11 @@ class RunManager():
     run_duration = time.time() - self.run_start_time
 
     # record epoch loss and accuracy
-    no_samples_in_batch = self.loader.dataset[0][0].shape[0]*self.loader.dataset[0][0].shape[1]
+    # no_samples_in_batch = self.loader.dataset[0][0].shape[0]*self.loader.dataset[0][0].shape[1]
     self.epoch_loss = self.epoch_loss/len(self.loader.dataset)
     self.test_epoch_loss = self.test_epoch_loss/len(self.test_loader.dataset)
-    accuracy = 100*self.epoch_num_correct / (len(self.loader.dataset)*no_samples_in_batch)
-    test_accuracy = 100*self.test_epoch_num_correct / (len(self.test_loader.dataset)*no_samples_in_batch)
+    # accuracy = 100*self.epoch_num_correct / (len(self.loader.dataset)*no_samples_in_batch)
+    # test_accuracy = 100*self.test_epoch_num_correct / (len(self.test_loader.dataset)*no_samples_in_batch)
 
     train_perplexity = np.exp(self.epoch_loss)
     test_perplexity = np.exp(self.test_epoch_loss)
@@ -259,8 +259,7 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
       m.track_loss(loss / network.batch_sz, train=1)
       # m.track_num_correct(scores, y, train=1)   Using Perplexity instead of Accuracy measurement
 
-    print(f'Epoch No:{epoch}')
-    print("Loss:{0:.2f}".format(m.epoch_loss / len(loader.dataset)))
+    print(f'Epoch No:{epoch}, Loss:{(m.epoch_loss / len(loader.dataset)):.2f}')
 
     # Same run for Test only without backprop
     torch.no_grad()

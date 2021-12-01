@@ -27,10 +27,10 @@ except:
 
 def main():
     params = OrderedDict(
-        model_type=['ModelType.GRU', 'ModelType.LSTM'],
+        model_type=['ModelType.LSTM'],
         lr=[0.001],
         batch_size=[20],
-        dropout=[0.5],
+        dropout=[0.5, 0],
         layers_num=[2]
     )
 
@@ -43,10 +43,10 @@ def main():
         args: Namespace = parse_args()
 
     data: Data = DataGetter.get_data(args.batch_size, args.sequence_length)
-    traindata = PennDataset(data.train_dataset[:20])
+    traindata = PennDataset(data.train_dataset)
     testdata = PennDataset(data.test_dataset)
 
-    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=10)
+    train_w_RunManager(data, traindata, testdata, nll_loss, args, params=params, epochs=5)
 
 def train_model(title: str, model: ModelBase, data: Data, args: Namespace):
     print("Model: " + title)
