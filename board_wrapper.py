@@ -193,14 +193,14 @@ import asyncio
 import time
 
 
-def background(f):
-    def wrapped(*args, **kwargs):
-        return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
+# def background(f):
+#     def wrapped(*args, **kwargs):
+#         return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
 
-    return wrapped
+#     return wrapped
 
 
-@background
+# @background
 def background_train(i: int, run: dict, data: object, train_data, test_data, criterion, args: Namespace, epochs: int,
                        params=cm.params):
   m = RunManager(image=False)
@@ -225,7 +225,9 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
   optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.1)  # embedding param
 
   m.begin_run(run, network, loader, testloader)
+  print(f"epoch stast {epoch_start}, total epochs {epochs}")
   for epoch in range(epoch_start, epochs):
+    print(f"starting loop with epoch {epoch}")
     m.begin_epoch()
     network.train()
     states = network.state_init()
@@ -290,6 +292,7 @@ def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace, 
     # dfs = [pd.DataFrame() for i in range(len(RunBuilder.get_runs(params)))]
 
     for i, run in enumerate(RunBuilder.get_runs(params)):
+      print("in train_w_Runmanager")
       background_train(i, run, data, train_data, test_data, criterion, args, epochs, params)
 
 
