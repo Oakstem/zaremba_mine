@@ -76,7 +76,7 @@ class RunManager():
     self.tb = SummaryWriter(log_dir=f'{cm.LOG_DIR}-{run}')
 
     x, y = next(iter(self.loader))
-    init_func = getattr(network, "states_init", None)
+    # init_func = getattr(network, "states_init", None)
     # if callable(init_func):
     #   states = self.network.state_init(self.loader.batch_size)
 
@@ -86,9 +86,11 @@ class RunManager():
     # self.tb.add_graph(self.network, (x,states))
 
   # when run ends, close TensorBoard, zero epoch count
-  def end_run(self):
+  def end_run(self, i:int):
     self.tb.close()
     self.epoch_count = 0
+    print(f"Run No.{i} ended")
+      
 
   # zero epoch count, loss, accuracy, 
   def begin_epoch(self):
@@ -277,7 +279,7 @@ def background_train(i: int, run, data, train_data, test_data, criterion, args: 
     # if epoch % 2 == 0:
     torch.save(network, f'results/{run}.model')
     m.save(f'{run}', df)
-  m.end_run()
+  m.end_run(i)
   torch.save(network, f'results/{run}.model')
     # when run is done, save results to files
   m.save(f'{run}', df)
