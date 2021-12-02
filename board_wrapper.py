@@ -223,7 +223,7 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
   # Setting a different optimizer for the Embedding & all other model params
 
   optimizer = torch.optim.Adam(list(network.parameters())[1:], lr=run.lr)  # other model params
-  optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.001)  # embedding param
+  optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.01)  # embedding param
 
   m.begin_run(run, network, loader, testloader)
   for epoch in range(epoch_start, epochs):
