@@ -223,7 +223,7 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
   # Setting a different optimizer for the Embedding & all other model params
 
   optimizer = torch.optim.Adam(list(network.parameters())[1:], lr=run.lr)  # other model params
-  optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.01)  # embedding param
+  optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.1)  # embedding param
 
   m.begin_run(run, network, loader, testloader)
   for epoch in range(epoch_start, epochs):
@@ -263,6 +263,10 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
               network.embedding.weight.grad.to_dense().isnan().count_nonzero() > 0:
         print(f'Run:{i}, embedding layer exploded once again :(')
       m.track_loss(loss / network.batch_sz, train=1)
+      # if epoch % 2 == 0 and cm.IN_COLAB:
+      #   %cp results/ /content/drive/MyDrive/DeepLearning2021/Ex2/Alons/colab_save -r
+      #   %cp runs/ /content/drive/MyDrive/DeepLearning2021/Ex2/Alons/colab_save -r
+
       # m.track_num_correct(scores, y, train=1)   Using Perplexity instead of Accuracy measurement
 
     # Same run for Test only without backprop
