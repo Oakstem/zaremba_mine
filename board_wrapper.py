@@ -20,6 +20,7 @@ from model.model_base import ModelBase
 from model.model_getter import get_model
 from training.perplexity import perplexity
 import numpy as np
+import common as cm
 
 
 # Read in the hyper-parameters and return a Run namedtuple containing all the
@@ -228,9 +229,11 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     # Run a batch in train mode
     ###########################################################################
     m.begin_epoch()
+
     network.train()
     states = network.state_init()
-    device: str or int = next(network.parameters()).device
+    device = cm.net_device
+    network.to(device)
     btch_cnt = 0
     cnt = 0
     for batch in loader:
@@ -268,6 +271,9 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     for batch in testloader:
       x = batch[0].squeeze()
       y = batch[1].squeeze()
+      x = x.to(device)
+      y = y.to(device)
+
       preds, states = network(x, states)
       loss = criterion(preds, y)
       m.track_loss(loss / network.batch_sz, train=0)
