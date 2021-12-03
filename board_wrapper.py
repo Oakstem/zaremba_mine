@@ -202,8 +202,8 @@ import time
 
 #
 # @background
-def background_train(i: int, run: dict, data: object, train_data, test_data, criterion, args: Namespace, epochs: int,
-                       params=cm.params):
+def background_train(i: int, run: tuple, data: object, train_data, test_data,
+                     criterion, args: Namespace, epochs: int):
   m = RunManager(image=False)
   # if params changes, following line of code should reflect the changes too
   try:
@@ -220,21 +220,18 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
   m = RunManager(epoch_count=epoch_start, run_no=i)
   loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=False)
   testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
-  # Setting a different optimizer for the Embedding & all other model params
 
-  optimizer = torch.optim.Adam(list(network.parameters())[1:], lr=run.lr)  # other model params
-  optimizerE = torch.optim.SparseAdam([list(network.parameters())[0]], lr=0.1)  # embedding param
+  optimizer = torch.optim.Adam(list(network.parameters()), lr=run.lr, weight_decay=1e-5)  # other model params
 
   m.begin_run(run, network, loader, testloader)
   for epoch in range(epoch_start, epochs):
-    if i == 0:
-      stop =1
+    # Run a batch in train mode
+    ###########################################################################
     m.begin_epoch()
     network.train()
     states = network.state_init()
     device: str or int = next(network.parameters()).device
     btch_cnt = 0
-    # Run a batch in train mode
     cnt = 0
     for batch in loader:
       btch_cnt += 1
@@ -248,7 +245,6 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
       y = y.to(device)
 
       optimizer.zero_grad()
-      optimizerE.zero_grad()
 
       states = network.detach(states)
       scores, states = network(x, states)
@@ -258,18 +254,14 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
       torch.nn.utils.clip_grad_norm_(network.parameters(), args.max_gradients_norm)
       torch.nn.utils.clip_grad_norm_([list(network.parameters())[0]], 1)
       optimizer.step()
-      optimizerE.step()
+
       if network.embedding.weight.isnan().count_nonzero()>0 or\
-              network.embedding.weight.grad.to_dense().isnan().count_nonzero() > 0:
+              network.embedding.weight.grad.isnan().count_nonzero() > 0:
         print(f'Run:{i}, embedding layer exploded once again :(')
       m.track_loss(loss / network.batch_sz, train=1)
-      # if epoch % 2 == 0 and cm.IN_COLAB:
-      #   %cp results/ /content/drive/MyDrive/DeepLearning2021/Ex2/Alons/colab_save -r
-      #   %cp runs/ /content/drive/MyDrive/DeepLearning2021/Ex2/Alons/colab_save -r
-
-      # m.track_num_correct(scores, y, train=1)   Using Perplexity instead of Accuracy measurement
 
     # Same run for Test only without backprop
+    ###########################################################################
     torch.no_grad()
     network.eval()
     states = network.state_init()
@@ -277,7 +269,6 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
       x = batch[0].squeeze()
       y = batch[1].squeeze()
       preds, states = network(x, states)
-      # loss = F.cross_entropy(preds, y)
       loss = criterion(preds, y)
       m.track_loss(loss / network.batch_sz, train=0)
       m.track_num_correct(preds, y, train=0)
@@ -287,17 +278,13 @@ def background_train(i: int, run: dict, data: object, train_data, test_data, cri
     m.save(f'{run}', df)
   m.end_run(i)
   torch.save(network, f'results/{run}.model')
-    # when run is done, save results to files
+  # when run is done, save results to csv & json files
   m.save(f'{run}', df)
 
 def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace, epochs: int,
-                       params=cm.params, ):
-
-    # create array of dataframes for every run
-    # dfs = [pd.DataFrame() for i in range(len(RunBuilder.get_runs(params)))]
-
+                       params):
     for i, run in enumerate(RunBuilder.get_runs(params)):
-      background_train(i, run, data, train_data, test_data, criterion, args, epochs, params)
+      background_train(i, run, data, train_data, test_data, criterion, args, epochs)
 
 
 

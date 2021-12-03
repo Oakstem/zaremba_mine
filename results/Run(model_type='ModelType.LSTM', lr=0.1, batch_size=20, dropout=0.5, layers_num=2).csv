@@ -1,2 +1,5 @@
 ,run,epoch,train/loss,test/loss,train/perplexity,test/perplexity,epoch duration,run duration,model_type,lr,batch_size,dropout,layers_num
 0,1,1,6,6,839,646,5903,5913,ModelType.LSTM,0.1,20,0.5,2
+1,1,2,6,6,709,673,3348,9271,ModelType.LSTM,0.1,20,0.5,2
+2,1,3,6,6,699,658,4242,13514,ModelType.LSTM,0.1,20,0.5,2
+3,1,4,6,6,692,654,2525,16041,ModelType.LSTM,0.1,20,0.5,2

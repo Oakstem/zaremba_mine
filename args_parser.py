@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument("--dropout", type=float, default=0.5, help="The dropout parameter.")
     parser.add_argument("--weights_uniforming", type=float, default=0.05, help="The weight initialization parameter.")
     parser.add_argument("--batch_size", type=int, default=20, help="The batch size.")
-    parser.add_argument("--sequence_length", type=int, default=35, help="The sequence length for bptt.")
+    parser.add_argument("--sequence_length", type=int, default=20, help="The sequence length for bptt.")
     parser.add_argument("--learning_rate", type=float, default=1, help="The learning rate.")
     parser.add_argument("--total_epochs_num", type=int, default=39, help="Total number of epochs for training.")
     parser.add_argument("--first_epoch_modify_lr", type=int, default=6, help="The epoch to start factoring the learning rate.")
