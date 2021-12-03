@@ -210,9 +210,9 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     ###########################################################################
     m.begin_epoch()
     network.train()
-    print('change network to device')
+    print(f'change network to {device}')
     network.to(device)
-    print('change states to device')
+    print(f'change states to {device}')
     states = network.state_init(device)
 
     print(f'Training on: {device}')
