@@ -6,6 +6,7 @@ except:
   IN_COLAB = False
 
 if torch.cuda.is_available():
+  print("Model will be training on CUDA.\n")
   net_device = torch.device('cuda')
 else:
   print("Model will be training on the CPU.\n")
