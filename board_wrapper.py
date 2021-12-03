@@ -178,6 +178,8 @@ class RunManager():
 
 def background_train(i: int, run: tuple, data: object, train_data, test_data,
                      criterion, args: dict, epochs: int):
+  device = cm.net_device
+
   # Try loading a previous save of the model
   try:
     network = torch.load(f'results/{run}.model')
@@ -190,6 +192,9 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
                                    run.layers_num, args['hidden_layer_units'],
                                    args['weights_uniforming'], args['batch_sz'])
     epoch_start = 0
+
+
+
   # RunManager responsible for logging results to file / TB dashboard
   m = RunManager(epoch_count=epoch_start, run_no=i)
 
@@ -205,9 +210,11 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     ###########################################################################
     m.begin_epoch()
     network.train()
-    states = network.state_init()
-    device = cm.net_device
+    print('change network to device')
     network.to(device)
+    print('change states to device')
+    states = network.state_init(device)
+
     print(f'Training on: {device}')
     btch_cnt = 0
 

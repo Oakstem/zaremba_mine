@@ -31,9 +31,7 @@ class ModelBase(nn.Module, metaclass=abc.ABCMeta):
     def get_rnn_type(self) -> type:
         return None
             
-    def state_init(self):
-        device: str or int = next(self.parameters()).device
-
+    def state_init(self, device: str or int):
         states: [] = []
         for rnn in self.rnns:
             state = self.create_single_state(self.batch_sz, rnn.hidden_size, device)
