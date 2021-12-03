@@ -1,6 +1,6 @@
 
 """# RunBuilder & RunManager"""
-# A Slightly modified version of Twds's article:
+# A Slightly modified version of TWDs's article:
 # https://towardsdatascience.com/build-a-fashion-mnist-cnn-pytorch-style-efb297e22582
 
 # import modules to build RunBuilder and RunManager helper classes
@@ -73,18 +73,8 @@ class RunManager():
     self.network = network
     self.loader = loader
     self.test_loader = test_loader
-    # self.tb = SummaryWriter(log_dir=LOG_DIR, comment=f'-{run}')
     self.tb = SummaryWriter(log_dir=f'{cm.LOG_DIR}-{run}')
 
-    x, y = next(iter(self.loader))
-    # init_func = getattr(network, "states_init", None)
-    # if callable(init_func):
-    #   states = self.network.state_init(self.loader.batch_size)
-
-    if self.image_data:
-      grid = tv.utils.make_grid(x)
-      self.tb.add_image('images', grid)
-    # self.tb.add_graph(self.network, (x,states))
 
   # when run ends, close TensorBoard, zero epoch count
   def end_run(self, i:int):
@@ -109,12 +99,8 @@ class RunManager():
     epoch_duration = time.time() - self.epoch_start_time
     run_duration = time.time() - self.run_start_time
 
-    # record epoch loss and accuracy
-    # no_samples_in_batch = self.loader.dataset[0][0].shape[0]*self.loader.dataset[0][0].shape[1]
     self.epoch_loss = self.epoch_loss/len(self.loader.dataset)
     self.test_epoch_loss = self.test_epoch_loss/len(self.test_loader.dataset)
-    # accuracy = 100*self.epoch_num_correct / (len(self.loader.dataset)*no_samples_in_batch)
-    # test_accuracy = 100*self.test_epoch_num_correct / (len(self.test_loader.dataset)*no_samples_in_batch)
 
     train_perplexity = np.exp(self.epoch_loss)
     test_perplexity = np.exp(self.test_epoch_loss)
@@ -122,8 +108,6 @@ class RunManager():
     # Record epoch loss and accuracy to TensorBoard
     self.tb.add_scalar('Loss/train', self.epoch_loss, self.epoch_count)
     self.tb.add_scalar('Loss/test', self.test_epoch_loss, self.epoch_count)
-    # self.tb.add_scalar('Accuracy/train', accuracy, self.epoch_count)
-    # self.tb.add_scalar('Accuracy/test', test_accuracy, self.epoch_count)
     self.tb.add_scalar('Perplexity/train', train_perplexity, self.epoch_count)
     self.tb.add_scalar('Perplexity/test', test_perplexity, self.epoch_count)
 
@@ -177,7 +161,7 @@ class RunManager():
   def _get_num_correct(self, preds, y):
     amax = preds.argmax(dim=1)
     return amax.eq(y.view(amax.shape)).sum().item()
-  
+
   # save end results of all runs into csv, json for further analysis
   def save(self, fileName, df):
     if not df.empty:
@@ -191,22 +175,10 @@ class RunManager():
     with open(f'results/{fileName}.json', 'w', encoding='utf-8') as f:
       json.dump(self.run_data, f, ensure_ascii=False, indent=4)
 
-import asyncio
-import time
 
-#
-# def background(f):
-#     def wrapped(*args, **kwargs):
-#         return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
-#
-#     return wrapped
-
-#
-# @background
 def background_train(i: int, run: tuple, data: object, train_data, test_data,
-                     criterion, args: Namespace, epochs: int):
-  m = RunManager(image=False)
-  # if params changes, following line of code should reflect the changes too
+                     criterion, args: dict, epochs: int):
+  # Try loading a previous save of the model
   try:
     network = torch.load(f'results/{run}.model')
     df = pd.read_csv(f'results/{run}.csv', index_col=0)
@@ -215,32 +187,33 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
   except:
     df = pd.DataFrame()
     network: ModelBase = get_model(run.model_type, data.vocabulary_size, run.dropout,
-                                   run.layers_num, args.hidden_layer_units,
-                                   args.weights_uniforming, args.batch_size)
+                                   run.layers_num, args['hidden_layer_units'],
+                                   args['weights_uniforming'], args['batch_sz'])
     epoch_start = 0
+  # RunManager responsible for logging results to file / TB dashboard
   m = RunManager(epoch_count=epoch_start, run_no=i)
+
+  # Using Dataloaders for iterating
   loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=False)
   testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
 
-  optimizer = torch.optim.Adam(list(network.parameters()), lr=run.lr, weight_decay=1e-5)  # other model params
+  optimizer = torch.optim.Adam(list(network.parameters()), lr=run.lr, weight_decay=run.w_decay)  # other model params
 
   m.begin_run(run, network, loader, testloader)
   for epoch in range(epoch_start, epochs):
     # Run a batch in train mode
     ###########################################################################
     m.begin_epoch()
-
     network.train()
     states = network.state_init()
     device = cm.net_device
     network.to(device)
     btch_cnt = 0
-    cnt = 0
+
     for batch in loader:
       btch_cnt += 1
-      if cnt % 100 == 0:
-        print(f"Run: {i}, Batch No.{cnt}/{len(loader)}")
-      cnt += 1
+      if btch_cnt % 100 == 0:
+        print(f"Run: {i}, Batch No.{btch_cnt}/{len(loader)}")
       x = batch[0].squeeze()
       y = batch[1].squeeze()
 
@@ -254,10 +227,11 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
       loss = criterion(scores, y)
       loss.backward()
 
-      torch.nn.utils.clip_grad_norm_(network.parameters(), args.max_gradients_norm)
-      torch.nn.utils.clip_grad_norm_([list(network.parameters())[0]], 1)
+      torch.nn.utils.clip_grad_norm_(network.parameters(), args['max_gradients_norm'])
+      # torch.nn.utils.clip_grad_norm_([list(network.parameters())[0]], 1)
       optimizer.step()
 
+      # Embedding layer weights check for possible expload
       if network.embedding.weight.isnan().count_nonzero()>0 or\
               network.embedding.weight.grad.isnan().count_nonzero() > 0:
         print(f'Run:{i}, embedding layer exploded once again :(')
@@ -280,15 +254,15 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
       m.track_num_correct(preds, y, train=0)
 
     m.end_epoch(network, device)
+    # Save results to csv & json files + Model
     torch.save(network, f'results/{run}.model')
     m.save(f'{run}', df)
   m.end_run(i)
-  torch.save(network, f'results/{run}.model')
-  # when run is done, save results to csv & json files
-  m.save(f'{run}', df)
 
-def train_w_RunManager(data, train_data, test_data, criterion, args: Namespace, epochs: int,
+
+def train_w_RunManager(data, train_data, test_data, criterion, args: dict, epochs: int,
                        params):
+    # Loop of several different parameters train check
     for i, run in enumerate(RunBuilder.get_runs(params)):
       background_train(i, run, data, train_data, test_data, criterion, args, epochs)
 
