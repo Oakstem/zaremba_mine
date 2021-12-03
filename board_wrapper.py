@@ -210,14 +210,9 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     ###########################################################################
     m.begin_epoch()
     network.train()
-    print(f'change network to {device}')
     network.to(device)
-    print(f'change states to {device}')
     states = network.state_init(device)
-
-    print(f'Training on: {device}')
     btch_cnt = 0
-
     for batch in loader:
       btch_cnt += 1
       if btch_cnt % 100 == 0:
@@ -249,7 +244,7 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     ###########################################################################
     torch.no_grad()
     network.eval()
-    states = network.state_init()
+    states = network.state_init(device)
     for batch in testloader:
       x = batch[0].squeeze()
       y = batch[1].squeeze()
