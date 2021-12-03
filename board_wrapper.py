@@ -208,6 +208,7 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     states = network.state_init()
     device = cm.net_device
     network.to(device)
+    print(f'Training on: {device}')
     btch_cnt = 0
 
     for batch in loader:
