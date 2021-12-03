@@ -213,7 +213,7 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     print('change network to device')
     network.to(device)
     print('change states to device')
-    states = network.state_init(device)
+    states = network.state_init(device).to(device)
 
     print(f'Training on: {device}')
     btch_cnt = 0
