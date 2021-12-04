@@ -9,7 +9,7 @@ def get_model(type: str, vocabulary_size: int, dropout: float,
               weights_uniforming: float, batch_sz: int) -> ModelBase:
 
     model: ModelBase = None
-    if type == 'ModelType.LSTM':
+    if type == 'LSTM':
         model: ModelBase = ModelLSTM(vocabulary_size, num_of_layers, hidden_layer_units,
                                      dropout, weights_uniforming, batch_sz)
     else:
