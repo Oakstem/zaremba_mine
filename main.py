@@ -18,7 +18,6 @@ def main():
     const_args = OrderedDict(num_of_layers=2,
                              hidden_layer_units=200,
                              weights_uniforming=0.05,
-                             batch_sz=20,
                              max_gradients_norm=5,
                              vocab_sz=10000,
                              layers_num=2)

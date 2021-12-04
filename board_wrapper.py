@@ -184,7 +184,7 @@ def load_prev(run: namedtuple, i: int, args: dict):
         df = pd.DataFrame()
         network: ModelBase = get_model(run.model_type, args['vocab_sz'], run.dropout,
                                        args['layers_num'], args['hidden_layer_units'],
-                                       args['weights_uniforming'], args['batch_sz'])
+                                       args['weights_uniforming'], run.batch_size)
         epoch_start = 0
     return network, df, epoch_start
 
@@ -196,8 +196,8 @@ def embedding_weight_check(network, i: int):
 
 
 def get_xy_from_batch(batch, device):
-    x = batch[0].squeeze()
-    y = batch[1].squeeze()
+    x = batch[0].view(batch[0].shape[1], -1)
+    y = batch[1].view(batch[1].shape[1], -1)
     x = x.to(device)
     y = y.to(device)
     return x, y
