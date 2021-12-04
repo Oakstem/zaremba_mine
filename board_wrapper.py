@@ -233,14 +233,14 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
             optimizer.zero_grad()
             states = network.detach(states)
             scores, states = network(x, states)
-            loss = criterion(scores, y.view(-1, 1))
+            loss = criterion(scores, y)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(network.parameters(), run.grad_clip)
             optimizer.step()
             # Embedding layer weights check for possible explode
             embedding_weight_check(network, i)
             # Track losses for TB
-            m.track_loss(loss, train=1)
+            m.track_loss(loss / run.batch_size, train=1)
 
         # Same run for Test only [without backprop]
         ###########################################################################
@@ -250,9 +250,9 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
         for batch in data.test_loader:
             x, y = get_xy_from_batch(batch, device)
             preds, states = network(x, states)
-            loss = criterion(preds, y.view(-1, 1))
+            loss = criterion(preds, y)
             # Track losses for TB
-            m.track_loss(loss, train=0)
+            m.track_loss(loss / run.batch_size, train=0)
 
         m.end_epoch(network, device)
         # Save results to csv & json files + Model
