@@ -73,6 +73,7 @@ class RunManager():
         self.loader = loader
         self.test_loader = test_loader
         self.tb = SummaryWriter(log_dir=f'{cm.LOG_DIR}-{run}')
+        self.min_loss = 100
 
     # when run ends, close TensorBoard, zero epoch count
     def end_run(self, i: int):
@@ -98,7 +99,6 @@ class RunManager():
 
         self.epoch_loss = self.epoch_loss / len(self.loader)
         self.test_epoch_loss = self.test_epoch_loss / len(self.test_loader)
-
         train_perplexity = np.exp(self.epoch_loss)
         test_perplexity = np.exp(self.test_epoch_loss)
 
@@ -160,7 +160,7 @@ class RunManager():
         return amax.eq(y.view(amax.shape)).sum().item()
 
     # save end results of all runs into csv, json for further analysis
-    def save(self, fileName, df):
+    def save(self, fileName, df, network, run):
         if not df.empty:
             res_df = df.append(pd.DataFrame.from_dict(self.run_data, orient='columns'))
         else:
@@ -169,8 +169,9 @@ class RunManager():
                 orient='columns')
         res_df.to_csv(f'results/{fileName}.csv')
 
-        with open(f'results/{fileName}.json', 'w', encoding='utf-8') as f:
-            json.dump(self.run_data, f, ensure_ascii=False, indent=4)
+        if self.test_epoch_loss < self.min_loss:
+            torch.save(network, f'results/{run}.model')
+            self.min_loss = self.test_epoch_loss
 
 
 def load_prev(run: namedtuple, i: int, args: dict):
@@ -208,7 +209,8 @@ def status_print(btch_cnt: int, i: int, data: Data):
         print(f"Run: {i}, Batch No.{btch_cnt}/{len(data.train_loader)}")
 
 
-def train_one_epoch(m: RunManager, network: object, device: int or str, data: Data, optimizer: object, criterion, i: int,
+def train_one_epoch(m: RunManager, network: object, device: int or str,
+                    data: Data, optimizer: torch.optim.Optimizer, criterion, i: int,
                     run: namedtuple):
     m.begin_epoch()
     network.train()
@@ -222,26 +224,26 @@ def train_one_epoch(m: RunManager, network: object, device: int or str, data: Da
         optimizer.zero_grad()
         states = network.detach(states)
         scores, states = network(x, states)
-        loss = criterion(scores, y)
+        loss = criterion(scores, y.view(-1, 1))
         loss.backward()
         torch.nn.utils.clip_grad_norm_(network.parameters(), run.grad_clip)
         optimizer.step()
         # Embedding layer weights check for possible explode
         embedding_weight_check(network, i)
         # Track losses for TB
-        m.track_loss(loss / run.seq_sz, train=1)
+        m.track_loss(loss, train=1)
 
-        # Same run for Test only [without backprop]
-        ###########################################################################
-        torch.no_grad()
-        network.eval()
-        states = network.state_init(device)
-        for batch in data.test_loader:
-            x, y = get_xy_from_batch(batch, device)
-            preds, states = network(x, states)
-            loss = criterion(preds, y)
-            # Track losses for TB
-            m.track_loss(loss / run.seq_sz, train=0)
+    # Same run for Test only [without backprop]
+    ###########################################################################
+    torch.no_grad()
+    network.eval()
+    states = network.state_init(device)
+    for batch in data.test_loader:
+        x, y = get_xy_from_batch(batch, device)
+        scores, states = network(x, states)
+        loss = criterion(scores, y.view(-1, 1))
+        # Track losses for TB
+        m.track_loss(loss, train=0)
 
 
 def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int, rawdata: list):
@@ -260,8 +262,7 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
         train_one_epoch(m, network, device, data, optimizer, criterion, i, run)
         m.end_epoch(network, device)
         # Save results to csv & json files + Model
-        torch.save(network, f'results/{run}.model')
-        m.save(f'{run}', df)
+        m.save(f'{run}', df, network, run)
     m.end_run(i)
 
 
