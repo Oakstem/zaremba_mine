@@ -184,7 +184,7 @@ def load_prev(run: namedtuple, i: int, args: dict):
         df = pd.DataFrame()
         network: ModelBase = get_model(run.model_type, args['vocab_sz'], run.dropout,
                                        args['layers_num'], args['hidden_layer_units'],
-                                       args['weights_uniforming'], run.seq_sz)
+                                       args['weights_uniforming'], args['batch_sz'])
         epoch_start = 0
     return network, df, epoch_start
 
@@ -240,7 +240,7 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
             # Embedding layer weights check for possible explode
             embedding_weight_check(network, i)
             # Track losses for TB
-            m.track_loss(loss / run.batch_size, train=1)
+            m.track_loss(loss / network.batch_sz, train=1)
 
         # Same run for Test only [without backprop]
         ###########################################################################
@@ -252,7 +252,7 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
             preds, states = network(x, states)
             loss = criterion(preds, y)
             # Track losses for TB
-            m.track_loss(loss / run.batch_size, train=0)
+            m.track_loss(loss / network.batch_sz, train=0)
 
         m.end_epoch(network, device)
         # Save results to csv & json files + Model
