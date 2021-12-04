@@ -7,9 +7,9 @@ def main():
     params = OrderedDict(
         model_type=['ModelType.GRU'],
         lr=[0.001],
-        batch_size=[10],
+        batch_size=[30],
         dropout=[0],
-        seq_sz=[30],
+        seq_sz=[50],
         w_decay=[1e-4],
         grad_clip=[1],
         shuffle=[True, False]
