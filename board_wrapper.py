@@ -215,7 +215,7 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
     btch_cnt = 0
     for batch in loader:
       btch_cnt += 1
-      if btch_cnt % 100 == 0:
+      if cm.DEBUG and btch_cnt % 100 == 0:
         print(f"Run: {i}, Batch No.{btch_cnt}/{len(loader)}")
       x = batch[0].squeeze()
       y = batch[1].squeeze()

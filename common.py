@@ -12,6 +12,9 @@ else:
   print("Model will be training on the CPU.\n")
   net_device = torch.device('cpu')
 
+# Constants:
+DEBUG = 0
+
 # Paths:
 LOG_DIR = 'runs/'
 Model_DIR = 'saved_models/'
