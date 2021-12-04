@@ -196,8 +196,8 @@ def embedding_weight_check(network, i: int):
 
 
 def get_xy_from_batch(batch, device):
-    x = batch[0].view(batch[0].shape[1], -1)
-    y = batch[1].view(batch[1].shape[1], -1)
+    x = batch[0].view(batch[0].shape[2], -1)
+    y = batch[1].view(batch[1].shape[2], -1)
     x = x.to(device)
     y = y.to(device)
     return x, y

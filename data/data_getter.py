@@ -18,7 +18,7 @@ class DataGetter:
         valid = data[1]
         test = data[2]
 
-        train_dataset = DataGetter.get_dataset(sequence_length, batch_size, train[:,:1000], device)
+        train_dataset = DataGetter.get_dataset(sequence_length, batch_size, train, device)
         validation_dataset = DataGetter.get_dataset(sequence_length, batch_size, valid, device)
         test_dataset = DataGetter.get_dataset(sequence_length, batch_size, test, device)
 
@@ -53,10 +53,10 @@ class DataGetter:
 
             if seqlen <= data.size()[1] - i:
                 x: Tensor = data[:, i:i + seqlen]
-                x: Tensor = x.transpose(1, 0)
+                # x: Tensor = x.transpose(1, 0)
 
                 y: Tensor = data[:, i + 1:i + seqlen + 1]
-                y: Tensor = y.transpose(1, 0)
+                # y: Tensor = y.transpose(1, 0)
 
                 dataset.append((x, y))
 
