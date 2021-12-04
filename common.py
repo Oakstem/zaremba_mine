@@ -13,7 +13,7 @@ else:
   net_device = torch.device('cpu')
 
 # Constants:
-DEBUG = True
+DEBUG = False
 
 # Paths:
 LOG_DIR = 'runs/'

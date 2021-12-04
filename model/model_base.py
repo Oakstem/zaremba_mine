@@ -38,7 +38,7 @@ class ModelBase(nn.Module, metaclass=abc.ABCMeta):
             states.append(state)
         return states
 
-    def create_single_state(self, batch_size, hidden_size, device: str or int):
+    def create_single_state(self, seq_size, hidden_size, device: str or int):
         return None
 
     @staticmethod
