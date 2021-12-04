@@ -96,8 +96,8 @@ class RunManager():
         epoch_duration = time.time() - self.epoch_start_time
         run_duration = time.time() - self.run_start_time
 
-        self.epoch_loss = self.epoch_loss / len(self.loader.dataset)
-        self.test_epoch_loss = self.test_epoch_loss / len(self.test_loader.dataset)
+        self.epoch_loss = self.epoch_loss / len(self.loader)
+        self.test_epoch_loss = self.test_epoch_loss / len(self.test_loader)
 
         train_perplexity = np.exp(self.epoch_loss)
         test_perplexity = np.exp(self.test_epoch_loss)

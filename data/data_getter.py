@@ -18,9 +18,9 @@ class DataGetter:
         valid = data[1]
         test = data[2]
 
-        train_dataset = DataGetter.get_dataset(sequence_length, train, device)
-        validation_dataset = DataGetter.get_dataset(sequence_length, valid, device)
-        test_dataset = DataGetter.get_dataset(sequence_length, test, device)
+        train_dataset = DataGetter.get_dataset(sequence_length, batch_size, train[:,:1000], device)
+        validation_dataset = DataGetter.get_dataset(sequence_length, batch_size, valid, device)
+        test_dataset = DataGetter.get_dataset(sequence_length, batch_size, test, device)
 
         data: Data = Data(train_dataset, validation_dataset, test_dataset, vocabulary_size, batch_size, shuffle)
         return data
@@ -43,14 +43,15 @@ class DataGetter:
 
     # Batches the data with [seq_len, 1] dimensionality.
     @staticmethod
-    def get_dataset(sequence_length, data: ndarray, device):
+    def get_dataset(sequence_length: int, batch_sz: int, data: ndarray, device: str or int):
+        num_samples = int(data.shape[1] / sequence_length) * sequence_length
+        data = data[:, :num_samples]
         data: Tensor = torch.tensor(data, dtype=torch.int64).to(device)
-
         dataset = []
-        for i in range(0, data.size()[1], sequence_length):
+        for i in range(0, data.size()[1]-sequence_length, sequence_length):
             seqlen: int = int(np.min([sequence_length, data.size()[1] - i]))
 
-            if seqlen < data.size()[1] - i:
+            if seqlen <= data.size()[1] - i:
                 x: Tensor = data[:, i:i + seqlen]
                 x: Tensor = x.transpose(1, 0)
 
