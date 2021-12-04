@@ -8,3 +8,4 @@ __pycache__/*
 backup/results/__init__.py
 backup/*
 runs/
+results/*model

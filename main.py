@@ -16,7 +16,8 @@ def main():
         dropout=[0],
         layers_num=[2],
         seq_sz=[20],
-        w_decay=[1e-6]
+        w_decay=[1e-6],
+        grad_clip=[1, 5, 10]
     )
 
     args = OrderedDict(num_of_layers=2,

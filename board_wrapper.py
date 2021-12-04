@@ -124,8 +124,8 @@ class RunManager():
     results = OrderedDict()
     results["run"] = self.run_count
     results["epoch"] = int(self.epoch_count)
-    results["train/loss"] = int(self.epoch_loss)
-    results["test/loss"] = int(self.test_epoch_loss)
+    results["train/loss"] = self.epoch_loss
+    results["test/loss"] = self.test_epoch_loss
     results["train/perplexity"] = int(train_perplexity)
     results["test/perplexity"] = int(test_perplexity)
     results["epoch duration"] = int(epoch_duration)
@@ -230,7 +230,7 @@ def background_train(i: int, run: tuple, data: object, train_data, test_data,
       loss = criterion(scores, y)
       loss.backward()
 
-      torch.nn.utils.clip_grad_norm_(network.parameters(), args['max_gradients_norm'])
+      torch.nn.utils.clip_grad_norm_(network.parameters(), run.grad_clip)
       # torch.nn.utils.clip_grad_norm_([list(network.parameters())[0]], 1)
       optimizer.step()
 
