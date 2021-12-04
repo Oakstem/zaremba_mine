@@ -13,8 +13,7 @@ else:
   net_device = torch.device('cpu')
 
 # Constants:
-DEBUG = 0
+DEBUG = True
 
 # Paths:
 LOG_DIR = 'runs/'
-Model_DIR = 'saved_models/'
