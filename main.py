@@ -9,7 +9,7 @@ def main():
         lr=[0.001],
         batch_size=[20],
         dropout=[0],
-        seq_sz=[30],
+        seq_sz=[35],
         w_decay=[1e-4],
         grad_clip=[1]
     )
