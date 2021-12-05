@@ -233,7 +233,7 @@ def train_one_epoch(m: RunManager, network: nn.Module, device: int or str,
 
 
 def test_one_epoch(network: nn.Module, device: int or str,
-                    data: Data, criterion, m: RunManager=None, valid=False):
+                    data: Data, criterion, m: RunManager=None, valid=True):
     # Same run for Test only [without backprop]
     ###########################################################################
     if not m:

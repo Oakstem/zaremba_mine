@@ -24,7 +24,7 @@ def main():
                              layers_num=2,
                              shuffle=False)
 
-    # train_w_RunManager(nll_loss, const_args, params=params, epochs=20)
+    train_w_RunManager(nll_loss, const_args, params=params, epochs=20)
     network_select = {1:'LSTM without dropout', 2: 'LSTM with dropout',
                       3: 'GRU without dropout', 4: 'GRU with dropout'}
     network = load_model(network_select[3], net_device)
