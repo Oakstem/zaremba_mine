@@ -17,7 +17,8 @@ def main():
         grad_clip=[1]
     )
 
-    const_args = OrderedDict(hidden_layer_units=200,
+    const_args = OrderedDict(num_of_layers=2,
+                             hidden_layer_units=200,
                              weights_uniforming=0.05,
                              vocab_sz=10000,
                              layers_num=2,
