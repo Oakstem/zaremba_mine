@@ -14,6 +14,7 @@ class ModelBase(nn.Module, metaclass=abc.ABCMeta):
         self.vocabsz = vocab_size
         self.hiddenu = hidden_layer_units
         self.embedding: nn.Embedding = nn.Embedding(vocab_size, hidden_layer_units, sparse=False)
+        self.batchnorm: nn.BatchNorm1d = nn.BatchNorm1d(batch_sz)
 
         self.rnns: nn.ModuleList = nn.ModuleList()
         rnns_type: type = self.get_rnn_type()
@@ -47,9 +48,11 @@ class ModelBase(nn.Module, metaclass=abc.ABCMeta):
 
     def forward(self, x: Tensor, states):
         x: Tensor = self.embedding(x)
+        x: Tensor = self.batchnorm(x)
         x: Tensor = self.dropout(x)
         for i, rnn in enumerate(self.rnns):
             x, states[i] = rnn(x, states[i])
+            x: Tensor = self.batchnorm(x)
             x: Tensor = self.dropout(x)
         x = x.view(x.size()[0] * x.size()[1], -1)
         scores: Tensor = self.fc(x)
