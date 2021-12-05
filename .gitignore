@@ -7,5 +7,3 @@ __pycache__/*
 *.json
 backup/results/__init__.py
 backup/*
-runs/
-results/*model
