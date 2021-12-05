@@ -34,8 +34,8 @@ def main():
     for i in range(1, 5):
         network = load_model(network_select[i], net_device)
         trainloss, trainperplexity = train_one_epoch(network, net_device, data, nll_loss, 0, no_grad=True)
-        testloss, testperplexity = test_one_epoch(network, net_device, data, nll_loss, valid=False)
-        validloss, validperplexity = test_one_epoch(network, net_device, data, nll_loss, valid=True)
+        loss, testperplexity = test_one_epoch(network, net_device, data, nll_loss, valid=False)
+        loss, validperplexity = test_one_epoch(network, net_device, data, nll_loss, valid=True)
         print(f"Model: {network_select[i]}, Resulted Train:{trainperplexity:.2f},"
               f" Validation:{validperplexity:.2f}, Test Perplexities:{testperplexity:.2f}")
 
