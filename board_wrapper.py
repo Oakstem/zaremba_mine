@@ -271,7 +271,7 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
     # RunManager responsible for logging results to file / TB dashboard
     m = RunManager(epoch_count=epoch_start, run_no=i)
     # optimizer = torch.optim.Adam(network.parameters(), lr=run.lr, weight_decay=run.w_decay)  # other model params
-    optimizer = torch.optim.SGD(network.parameters(), lr=0.1, momentum=0.9, weight_decay=run.w_decay)
+    optimizer = torch.optim.SGD(network.parameters(), lr=run.lr, momentum=0.9, weight_decay=run.w_decay)
     m.begin_run(run, network, data.train_loader, data.validation_loader)
 
     for epoch in range(epoch_start, epochs):
