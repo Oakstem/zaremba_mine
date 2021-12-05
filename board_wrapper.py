@@ -271,7 +271,7 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
     # RunManager responsible for logging results to file / TB dashboard
     m = RunManager(epoch_count=epoch_start, run_no=i)
     optimizer = torch.optim.Adam(network.parameters(), lr=run.lr, weight_decay=run.w_decay)  # other model params
-    m.begin_run(run, network, data.train_loader, data.validation_loader)
+    m.begin_run(run, network, data.train_loader, data.test_loader)
 
     for epoch in range(epoch_start, epochs):
         # Run a batch in train mode
