@@ -14,7 +14,7 @@ class ModelBase(nn.Module, metaclass=abc.ABCMeta):
         self.vocabsz = vocab_size
         self.hiddenu = hidden_layer_units
         self.embedding: nn.Embedding = nn.Embedding(vocab_size, hidden_layer_units, sparse=False)
-        self.batchnorm: nn.BatchNorm1d = nn.BatchNorm1d(batch_sz)
+        self.batchnorm: nn.BatchNorm1d = nn.BatchNorm1d(batch_sz, affine=False)
 
         self.rnns: nn.ModuleList = nn.ModuleList()
         rnns_type: type = self.get_rnn_type()
