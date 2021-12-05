@@ -44,8 +44,12 @@ class RunManager():
         # tracking every epoch count, loss, accuracy, time
         self.epoch_count = epoch_count
         self.epoch_loss = 0
+        self.test_epoch_loss = 0
+        self.min_loss = 100
         self.epoch_num_correct = 0
         self.epoch_start_time = None
+        self.train_perplexity = 0
+        self.test_perplexity = 0
 
         # tracking every run count, run data, hyper-params used, time
         self.run_params = None
@@ -56,6 +60,7 @@ class RunManager():
         # record model, loader and TensorBoard
         self.network = None
         self.loader = None
+        self.test_loader = None
         self.tb = None
 
         # set True if the module gets image input
@@ -90,7 +95,6 @@ class RunManager():
         self.epoch_loss = 0
         self.epoch_num_correct = 0
         self.test_epoch_loss = 0
-        self.test_epoch_num_correct = 0
 
     #
     def end_epoch(self, network, device):
@@ -100,14 +104,14 @@ class RunManager():
 
         self.epoch_loss = self.epoch_loss / len(self.loader)
         self.test_epoch_loss = self.test_epoch_loss / len(self.test_loader)
-        train_perplexity = np.exp(self.epoch_loss)
-        test_perplexity = np.exp(self.test_epoch_loss)
+        self.train_perplexity = np.exp(self.epoch_loss)
+        self.test_perplexity = np.exp(self.test_epoch_loss)
 
         # Record epoch loss and accuracy to TensorBoard
         self.tb.add_scalar('Loss/train', self.epoch_loss, self.epoch_count)
         self.tb.add_scalar('Loss/test', self.test_epoch_loss, self.epoch_count)
-        self.tb.add_scalar('Perplexity/train', train_perplexity, self.epoch_count)
-        self.tb.add_scalar('Perplexity/test', test_perplexity, self.epoch_count)
+        self.tb.add_scalar('Perplexity/train', self.train_perplexity, self.epoch_count)
+        self.tb.add_scalar('Perplexity/test', self.test_perplexity, self.epoch_count)
 
         # Record params to TensorBoard
         for name, param in self.network.named_parameters():
@@ -124,8 +128,8 @@ class RunManager():
         results["epoch"] = int(self.epoch_count)
         results["train/loss"] = self.epoch_loss
         results["test/loss"] = self.test_epoch_loss
-        results["train/perplexity"] = int(train_perplexity)
-        results["test/perplexity"] = int(test_perplexity)
+        results["train/perplexity"] = int(self.train_perplexity)
+        results["test/perplexity"] = int(self.test_perplexity)
         results["epoch duration"] = int(epoch_duration)
         results["run duration"] = int(run_duration)
 
@@ -147,13 +151,6 @@ class RunManager():
             self.epoch_loss += loss.item()
         else:
             self.test_epoch_loss += loss.item()
-
-    # accumulate number of corrects of batch into entire epoch num_correct
-    def track_num_correct(self, preds, y, train):
-        if train == 1:
-            self.epoch_num_correct += self._get_num_correct(preds, y)
-        else:
-            self.test_epoch_num_correct += self._get_num_correct(preds, y)
 
     @torch.no_grad()
     def _get_num_correct(self, preds, y):
@@ -232,19 +229,28 @@ def train_one_epoch(m: RunManager, network: nn.Module, device: int or str,
         # Embedding layer weights check for possible explode
         embedding_weight_check(network, i)
         # Track losses for TB
-        m.track_loss(loss/run.batch_size, train=1)
+        m.track_loss(loss/x.shape[1], train=1)
 
+
+def test_one_epoch(network: nn.Module, device: int or str,
+                    data: Data, criterion, m: RunManager=None, valid=False):
     # Same run for Test only [without backprop]
     ###########################################################################
+    if not m:
+        m = RunManager(epoch_count=0, run_no=0)
     torch.no_grad()
     network.eval()
     states = network.state_init(device)
-    for batch in data.test_loader:
+    loader = data.validation_loader if valid else data.test_loader
+    for batch in loader:
         x, y = get_xy_from_batch(batch, device)
         scores, states = network(x, states)
         loss = criterion(scores, y)
         # Track losses for TB
-        m.track_loss(loss/run.batch_size, train=0)
+        m.track_loss(loss/x.shape[1], train=0)
+    epoch_loss = m.test_epoch_loss/len(data.validation_loader)
+
+    return epoch_loss, np.exp(epoch_loss)
 
 
 def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int, rawdata: list):
@@ -255,12 +261,14 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
     # RunManager responsible for logging results to file / TB dashboard
     m = RunManager(epoch_count=epoch_start, run_no=i)
     optimizer = torch.optim.Adam(list(network.parameters()), lr=run.lr, weight_decay=run.w_decay)  # other model params
-    m.begin_run(run, network, data.train_loader, data.test_loader)
+
+    m.begin_run(run, network, data.train_loader, data.validation_loader)
 
     for epoch in range(epoch_start, epochs):
         # Run a batch in train mode
         ###########################################################################
         train_one_epoch(m, network, device, data, optimizer, criterion, i, run)
+        test_one_epoch(m, network, device, data, criterion)
         m.end_epoch(network, device)
         # Save results to csv & json files + Model
         m.save(f'{run}', df, network, run)

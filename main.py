@@ -1,7 +1,10 @@
 from training.nll_loss import nll_loss
 from board_wrapper import train_w_RunManager
 from collections import OrderedDict
-
+from model.model_getter import load_model
+from common import net_device
+from board_wrapper import test_one_epoch
+from data.data_getter import DataGetter
 
 def main():
     params = OrderedDict(
@@ -21,7 +24,15 @@ def main():
                              layers_num=2,
                              shuffle=False)
 
-    train_w_RunManager(nll_loss, const_args, params=params, epochs=20)
+    # train_w_RunManager(nll_loss, const_args, params=params, epochs=20)
+    network_select = {1:'LSTM without dropout', 2: 'LSTM with dropout',
+                      3: 'GRU without dropout', 4: 'GRU with dropout'}
+    network = load_model(network_select[3], net_device)
+
+    data = DataGetter.get_data\
+        (params['batch_size'][0], params['seq_sz'][0], data=DataGetter.data_init(), device=net_device)
+    loss, perplexity = test_one_epoch(network, net_device, data, nll_loss)
+    print(f"Resulted loss:{loss:.2f}, Perplexity:{perplexity:.2f}")
 
 
 
