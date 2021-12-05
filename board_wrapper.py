@@ -13,6 +13,7 @@ import pandas as pd
 import json
 from IPython.display import clear_output
 import torch
+import torch.nn as nn
 from model.model_base import ModelBase
 from model.model_getter import get_model
 import numpy as np
@@ -197,8 +198,8 @@ def embedding_weight_check(network, i: int):
 
 
 def get_xy_from_batch(batch, device):
-    x = batch[0].view(batch[0].shape[2], -1)
-    y = batch[1].view(batch[1].shape[2], -1)
+    x = batch[0].squeeze()
+    y = batch[1].squeeze()
     x = x.to(device)
     y = y.to(device)
     return x, y
@@ -209,7 +210,7 @@ def status_print(btch_cnt: int, i: int, data: Data):
         print(f"Run: {i}, Batch No.{btch_cnt}/{len(data.train_loader)}")
 
 
-def train_one_epoch(m: RunManager, network: object, device: int or str,
+def train_one_epoch(m: RunManager, network: nn.Module, device: int or str,
                     data: Data, optimizer: torch.optim.Optimizer, criterion, i: int,
                     run: namedtuple):
     m.begin_epoch()
@@ -224,14 +225,14 @@ def train_one_epoch(m: RunManager, network: object, device: int or str,
         optimizer.zero_grad()
         states = network.detach(states)
         scores, states = network(x, states)
-        loss = criterion(scores, y.view(-1, 1))
+        loss = criterion(scores, y)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(network.parameters(), run.grad_clip)
         optimizer.step()
         # Embedding layer weights check for possible explode
         embedding_weight_check(network, i)
         # Track losses for TB
-        m.track_loss(loss, train=1)
+        m.track_loss(loss/run.batch_size, train=1)
 
     # Same run for Test only [without backprop]
     ###########################################################################
@@ -241,9 +242,9 @@ def train_one_epoch(m: RunManager, network: object, device: int or str,
     for batch in data.test_loader:
         x, y = get_xy_from_batch(batch, device)
         scores, states = network(x, states)
-        loss = criterion(scores, y.view(-1, 1))
+        loss = criterion(scores, y)
         # Track losses for TB
-        m.track_loss(loss, train=0)
+        m.track_loss(loss/run.batch_size, train=0)
 
 
 def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int, rawdata: list):

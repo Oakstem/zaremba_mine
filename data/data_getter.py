@@ -14,13 +14,13 @@ class DataGetter:
 
         vocabulary: dict = DataGetter.get_vocabulary()
         vocabulary_size: int = len(vocabulary)
-        train = data[0][:,:1000]
+        train = data[0]
         valid = data[1]
         test = data[2]
 
-        train_dataset = DataGetter.get_dataset(sequence_length, batch_size, train, device)
-        validation_dataset = DataGetter.get_dataset(sequence_length, batch_size, valid, device)
-        test_dataset = DataGetter.get_dataset(sequence_length, batch_size, test, device)
+        train_dataset = DataGetter.get_dataset(train, sequence_length, batch_size, device)
+        validation_dataset = DataGetter.get_dataset(valid, sequence_length, batch_size, device)
+        test_dataset = DataGetter.get_dataset(test, sequence_length, batch_size, device)
 
         data: Data = Data(train_dataset, validation_dataset, test_dataset, vocabulary_size, batch_size, shuffle)
         return data
@@ -40,23 +40,25 @@ class DataGetter:
 
         return vocabulary
 
-
-    # Batches the data with [seq_len, 1] dimensionality.
+    # Batches the data with [T, B] dimensionality.
     @staticmethod
-    def get_dataset(sequence_length: int, batch_sz: int, data: ndarray, device: str or int):
-        num_samples = int(data.shape[1] / sequence_length) * sequence_length
-        data = data[:, :num_samples]
-        data: Tensor = torch.tensor(data, dtype=torch.int64).to(device)
-        dataset = []
-        for i in range(0, data.size()[1]-sequence_length, sequence_length):
-            seqlen: int = int(np.min([sequence_length, data.size()[1] - i]))
+    def get_dataset(data, sequence_length, batch_size, device):
+        data: Tensor = torch.tensor(data, dtype=torch.int64).to(device).squeeze()
+        num_batches: int = data.size()[0] // batch_size
 
-            if seqlen <= data.size()[1] - i:
+        data: Tensor = data[:num_batches * batch_size]
+        data: Tensor = data.view(batch_size, -1)
+
+        dataset = []
+        for i in range(0, data.size()[1] - 1, sequence_length):
+            seqlen: int = int(np.min([sequence_length, data.size()[1] - 1 - i]))
+
+            if seqlen < data.size()[1] - 1 - i:
                 x: Tensor = data[:, i:i + seqlen]
-                # x: Tensor = x.transpose(1, 0)
+                x: Tensor = x.transpose(1, 0)
 
                 y: Tensor = data[:, i + 1:i + seqlen + 1]
-                # y: Tensor = y.transpose(1, 0)
+                y: Tensor = y.transpose(1, 0)
 
                 dataset.append((x, y))
 

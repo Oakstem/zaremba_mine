@@ -13,8 +13,8 @@ class Data:
         test_n_batches = int(len(test_dataset) / batch_size)
 
         self.train_loader: [] = torch.utils.data.DataLoader\
-            (PennDataset(train_dataset[:train_n_batches*batch_size]), batch_size=batch_size, shuffle=shuffle)
+            (PennDataset(train_dataset), batch_size=1, shuffle=shuffle)
         self.validation_loader: [] = torch.utils.data.DataLoader\
-            (PennDataset(validation_dataset[:valid_n_batches*batch_size]), batch_size=batch_size, shuffle=shuffle)
+            (PennDataset(validation_dataset[:valid_n_batches*batch_size]), batch_size=1, shuffle=shuffle)
         self.test_loader: [] = torch.utils.data.DataLoader\
-            (PennDataset(test_dataset[:test_n_batches*batch_size]), batch_size=batch_size, shuffle=shuffle)
+            (PennDataset(test_dataset[:test_n_batches*batch_size]), batch_size=1, shuffle=shuffle)
