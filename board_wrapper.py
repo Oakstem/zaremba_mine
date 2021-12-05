@@ -207,30 +207,41 @@ def status_print(btch_cnt: int, i: int, data: Data):
         print(f"Run: {i}, Batch No.{btch_cnt}/{len(data.train_loader)}")
 
 
-def train_one_epoch(m: RunManager, network: nn.Module, device: int or str,
-                    data: Data, optimizer: torch.optim.Optimizer, criterion, i: int,
-                    run: namedtuple):
+def train_one_epoch(network: nn.Module, device: int or str,
+                    data: Data, criterion, i: int,
+                    run: namedtuple=None, m: RunManager=None,
+                    optimizer: torch.optim.Optimizer=None, no_grad=False):
+    if not m:
+        m = RunManager(epoch_count=0, run_no=0)
     m.begin_epoch()
-    network.train()
+    if no_grad:
+        torch.no_grad()
+        network.eval()
+    else:
+        network.train()
     network.to(device)
     states = network.state_init(device)
     btch_cnt = 0
+
     for batch in data.train_loader:
         btch_cnt += 1
         status_print(btch_cnt, i, data)
         x, y = get_xy_from_batch(batch, device)
-        optimizer.zero_grad()
+        if not no_grad:
+            optimizer.zero_grad()
         states = network.detach(states)
         scores, states = network(x, states)
         loss = criterion(scores, y)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(network.parameters(), run.grad_clip)
-        optimizer.step()
-        # Embedding layer weights check for possible explode
-        embedding_weight_check(network, i)
+        if not no_grad:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(network.parameters(), run.grad_clip)
+            optimizer.step()
+            # Embedding layer weights check for possible explode
+            embedding_weight_check(network, i)
         # Track losses for TB
         m.track_loss(loss/x.shape[1], train=1)
-
+    epoch_loss = m.epoch_loss / len(data.train_loader)
+    return epoch_loss, np.exp(epoch_loss)
 
 def test_one_epoch(network: nn.Module, device: int or str,
                     data: Data, criterion, m: RunManager=None, valid=True):
@@ -248,8 +259,7 @@ def test_one_epoch(network: nn.Module, device: int or str,
         loss = criterion(scores, y)
         # Track losses for TB
         m.track_loss(loss/x.shape[1], train=0)
-    epoch_loss = m.test_epoch_loss/len(data.validation_loader)
-
+    epoch_loss = m.test_epoch_loss/len(loader)
     return epoch_loss, np.exp(epoch_loss)
 
 
@@ -261,13 +271,12 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
     # RunManager responsible for logging results to file / TB dashboard
     m = RunManager(epoch_count=epoch_start, run_no=i)
     optimizer = torch.optim.Adam(list(network.parameters()), lr=run.lr, weight_decay=run.w_decay)  # other model params
-
     m.begin_run(run, network, data.train_loader, data.validation_loader)
 
     for epoch in range(epoch_start, epochs):
         # Run a batch in train mode
         ###########################################################################
-        train_one_epoch(m, network, device, data, optimizer, criterion, i, run)
+        train_one_epoch(network, device, data, criterion, i, run, m, optimizer)
         test_one_epoch(network, device, data, criterion, m)
         m.end_epoch(network, device)
         # Save results to csv & json files + Model

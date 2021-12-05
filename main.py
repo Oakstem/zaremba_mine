@@ -3,7 +3,7 @@ from board_wrapper import train_w_RunManager
 from collections import OrderedDict
 from model.model_getter import load_model
 from common import net_device
-from board_wrapper import test_one_epoch
+from board_wrapper import test_one_epoch, train_one_epoch
 from data.data_getter import DataGetter
 
 def main():
@@ -24,16 +24,20 @@ def main():
                              layers_num=2,
                              shuffle=False)
 
-    train_w_RunManager(nll_loss, const_args, params=params, epochs=20)
+    # train_w_RunManager(nll_loss, const_args, params=params, epochs=20)
     network_select = {1:'LSTM without dropout', 2: 'LSTM with dropout',
                       3: 'GRU without dropout', 4: 'GRU with dropout'}
-    network = load_model(network_select[3], net_device)
+
 
     data = DataGetter.get_data\
         (params['batch_size'][0], params['seq_sz'][0], data=DataGetter.data_init(), device=net_device)
-    loss, perplexity = test_one_epoch(network, net_device, data, nll_loss)
-    print(f"Resulted loss:{loss:.2f}, Perplexity:{perplexity:.2f}")
-
+    for i in range(1, 5):
+        network = load_model(network_select[i], net_device)
+        trainloss, trainperplexity = train_one_epoch(network, net_device, data, nll_loss, 0, no_grad=True)
+        loss, testperplexity = test_one_epoch(network, net_device, data, nll_loss, valid=False)
+        loss, validperplexity = test_one_epoch(network, net_device, data, nll_loss, valid=True)
+        print(f"Model: {network_select[i]}, Resulted Train:{trainperplexity:.2f},"
+              f" Validation:{validperplexity:.2f}, Test Perplexities:{testperplexity:.2f}")
 
 
 main()
