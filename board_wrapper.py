@@ -268,7 +268,7 @@ def background_train(i: int, run: namedtuple, criterion, args: dict, epochs: int
         # Run a batch in train mode
         ###########################################################################
         train_one_epoch(m, network, device, data, optimizer, criterion, i, run)
-        test_one_epoch(m, network, device, data, criterion)
+        test_one_epoch(network, device, data, criterion, m)
         m.end_epoch(network, device)
         # Save results to csv & json files + Model
         m.save(f'{run}', df, network, run)
