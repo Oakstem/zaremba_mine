@@ -14,7 +14,7 @@ class DataGetter:
 
         vocabulary: dict = DataGetter.get_vocabulary()
         vocabulary_size: int = len(vocabulary)
-        train = data[0]
+        train = data[0][:,:2000]
         valid = data[1]
         test = data[2]
 
